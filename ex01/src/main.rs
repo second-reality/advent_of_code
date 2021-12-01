@@ -3,7 +3,7 @@ fn part1(input: &[i32]) -> usize {
 }
 
 fn part2(input: &[i32]) -> usize {
-    let all_sums: Vec<i32> = input.windows(3).map(|i| i[0] + i[1] + i[2]).collect();
+    let all_sums: Vec<_> = input.windows(3).map(|i| i[0] + i[1] + i[2]).collect();
     part1(&all_sums)
 }
 
