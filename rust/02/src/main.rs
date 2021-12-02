@@ -14,14 +14,26 @@ struct Movement {
 struct Position {
     horizontal: i32,
     depth: i32,
+    aim: i32,
 }
 
 impl Position {
-    fn apply_move(&mut self, m: &Movement) {
+    fn apply_move_part1(&mut self, m: &Movement) {
         match m.direction {
             Direction::Up => self.depth -= m.increment,
             Direction::Down => self.depth += m.increment,
             Direction::Forward => self.horizontal += m.increment,
+        }
+    }
+
+    fn apply_move_part2(&mut self, m: &Movement) {
+        match m.direction {
+            Direction::Up => self.aim -= m.increment,
+            Direction::Down => self.aim += m.increment,
+            Direction::Forward => {
+                self.horizontal += m.increment;
+                self.depth += self.aim * m.increment;
+            }
         }
     }
 }
@@ -54,18 +66,32 @@ fn parse_input() -> Vec<Movement> {
     input_str.lines().map(parse_line).collect()
 }
 
-fn part1(moves: Vec<Movement>) -> i32 {
+fn part1(moves: &[Movement]) -> i32 {
     let mut p: Position = Position {
         horizontal: 0,
         depth: 0,
+        aim: 0, // not important here
     };
     for m in moves {
-        p.apply_move(&m);
+        p.apply_move_part1(m);
+    }
+    p.depth * p.horizontal
+}
+
+fn part2(moves: &[Movement]) -> i32 {
+    let mut p: Position = Position {
+        horizontal: 0,
+        depth: 0,
+        aim: 0,
+    };
+    for m in moves {
+        p.apply_move_part2(m);
     }
     p.depth * p.horizontal
 }
 
 fn main() {
     let input = parse_input();
-    println!("{}", part1(input));
+    println!("{}", part1(&input));
+    println!("{}", part2(&input));
 }
