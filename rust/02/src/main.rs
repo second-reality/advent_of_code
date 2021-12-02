@@ -66,32 +66,20 @@ fn parse_input() -> Vec<Movement> {
     input_str.lines().map(parse_line).collect()
 }
 
-fn part1(moves: &[Movement]) -> i32 {
-    let mut p: Position = Position {
-        horizontal: 0,
-        depth: 0,
-        aim: 0, // not important here
-    };
-    for m in moves {
-        p.apply_move_part1(m);
-    }
-    p.depth * p.horizontal
-}
-
-fn part2(moves: &[Movement]) -> i32 {
+fn part(moves: &[Movement], move_impl: fn(&mut Position, &Movement)) -> i32 {
     let mut p: Position = Position {
         horizontal: 0,
         depth: 0,
         aim: 0,
     };
     for m in moves {
-        p.apply_move_part2(m);
+        move_impl(&mut p, m);
     }
     p.depth * p.horizontal
 }
 
 fn main() {
     let input = parse_input();
-    println!("{}", part1(&input));
-    println!("{}", part2(&input));
+    println!("{}", part(&input, |p, m| p.apply_move_part1(m)));
+    println!("{}", part(&input, |p, m| p.apply_move_part2(m)));
 }
