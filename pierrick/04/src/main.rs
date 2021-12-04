@@ -74,41 +74,25 @@ fn get_input() -> (Vec<i32>, Vec<BingoBoard>) {
     (numbers, boards)
 }
 
-fn part1(numbers: &[i32], mut boards: Vec<BingoBoard>) -> i32 {
+fn play_boards(numbers: &[i32], mut boards: Vec<BingoBoard>) -> Vec<i32>
+{
+    let mut res = vec![];
     for &n in numbers.iter() {
         for b in boards.iter_mut() {
             b.play(n);
             if b.won() {
-                return n * b.sum_of_not_marked();
-            }
-        }
-    }
-
-    panic!("no board win");
-}
-
-fn part2(numbers: &[i32], mut boards: Vec<BingoBoard>) -> i32 {
-    let mut lol = vec![];
-    for &n in numbers.iter() {
-        for b in boards.iter_mut() {
-            b.play(n);
-            if b.won() {
-                lol.push(n * b.sum_of_not_marked());
+                res.push(n * b.sum_of_not_marked());
             }
         }
         boards.retain(|b| !b.won());
     }
 
-    if lol.is_empty() {
-        panic!("no board win");
-    }
-
-    *lol.last().unwrap()
+    res
 }
 
 fn main() {
     let (numbers, boards) = get_input();
-    println!("{}", part1(&numbers, boards));
-    let (numbers, boards) = get_input();
-    println!("{}", part2(&numbers, boards));
+    let results = play_boards(&numbers, boards);
+    println!("{}", results[0]);
+    println!("{}", *results.last().unwrap());
 }
