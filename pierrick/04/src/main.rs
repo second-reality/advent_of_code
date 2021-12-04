@@ -7,19 +7,17 @@ impl BingoBoard {
     fn new(numbers: &[Vec<i32>]) -> BingoBoard {
         let board_size = numbers[0].len();
 
-        let mut rows: Vec<Vec<i32>> = vec![];
-        let mut cols: Vec<Vec<i32>> = vec![];
-        numbers.iter().for_each(|row| rows.push(row.clone()));
-        for j in 0..board_size {
-            let col = numbers
+        let rows = numbers.to_vec();
+        let extract_col = |j| {
+            numbers
                 .iter()
                 .flatten()
                 .skip(j)
                 .step_by(board_size)
                 .copied()
-                .collect();
-            cols.push(col);
-        }
+                .collect()
+        };
+        let cols = (0..board_size).map(extract_col).collect();
 
         BingoBoard {
             rows_not_marked: rows,
