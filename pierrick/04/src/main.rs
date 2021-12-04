@@ -94,5 +94,5 @@ fn main() {
     let (numbers, boards) = get_input();
     let results = play_boards(&numbers, boards);
     println!("{}", results[0]);
-    println!("{}", *results.last().unwrap());
+    println!("{}", results.last().unwrap());
 }
