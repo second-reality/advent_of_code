@@ -37,13 +37,7 @@ impl BingoBoard {
     }
 
     fn sum_of_not_marked(&self) -> i32 {
-        let mut sum = 0;
-        for row in &self.rows_not_marked {
-            for col in row {
-                sum += col;
-            }
-        }
-        sum
+        self.rows_not_marked.iter().flatten().sum()
     }
 }
 
