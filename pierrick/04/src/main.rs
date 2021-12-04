@@ -9,17 +9,15 @@ impl BingoBoard {
 
         let mut rows: Vec<Vec<i32>> = vec![];
         let mut cols: Vec<Vec<i32>> = vec![];
-        for row in numbers {
-            assert!(row.len() == board_size);
-            rows.push(row.clone());
-        }
+        numbers.iter().for_each(|row| rows.push(row.clone()));
         for j in 0..board_size {
-            let mut col = vec![];
-            #[allow(clippy::needless_range_loop)]
-            for i in 0..board_size {
-                col.push(numbers[i][j]);
-            }
-            assert!(col.len() == board_size);
+            let col = numbers
+                .iter()
+                .flatten()
+                .skip(j)
+                .step_by(board_size)
+                .copied()
+                .collect();
             cols.push(col);
         }
 
@@ -74,8 +72,7 @@ fn get_input() -> (Vec<i32>, Vec<BingoBoard>) {
     (numbers, boards)
 }
 
-fn play_boards(numbers: &[i32], mut boards: Vec<BingoBoard>) -> Vec<i32>
-{
+fn play_boards(numbers: &[i32], mut boards: Vec<BingoBoard>) -> Vec<i32> {
     let mut res = vec![];
     for &n in numbers.iter() {
         for b in boards.iter_mut() {
