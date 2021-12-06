@@ -5,34 +5,44 @@ fn get_input(s: &str) -> Vec<u8> {
         .collect()
 }
 
-fn after_one_day(population: &mut Vec<u8>) {
-    let num_dead = population.iter().filter(|&p| *p == 0).count();
-    let handle_one = |x| {
-        if x == 0 {
-            return 6;
-        }
-        x - 1
-    };
-    for i in 0..population.len() {
-        population[i] = handle_one(population[i]);
-    }
-    population.append(&mut vec![8; num_dead]);
+const MAX_DAYS: usize = 9;
+
+struct Population {
+    count: [u64; MAX_DAYS],
 }
 
-fn population_after_n_days(num_days: usize, population: &Vec<u8>) -> usize {
-    let mut population = population.clone();
-    for i in 0..num_days {
-        println!("on day: {}", i);
-        after_one_day(&mut population);
+impl Population {
+    fn new(fishes: &[u8]) -> Self {
+        let mut count = [0; MAX_DAYS];
+        fishes.iter().for_each(|&x| count[x as usize] += 1);
+        Population { count }
     }
-    population.len()
+
+    fn one_day(&mut self) {
+        let mut passed = 0;
+        for day in (0..MAX_DAYS).rev() {
+            std::mem::swap(&mut self.count[day], &mut passed);
+        }
+        self.count[6] += passed;
+        self.count[8] += passed;
+    }
+
+    fn size(&self) -> u64 {
+        self.count.iter().sum()
+    }
+}
+
+fn population_after_n_days(num_days: usize, fishes: &[u8]) -> u64 {
+    let mut population = Population::new(fishes);
+    (0..num_days).for_each(|_| population.one_day());
+    population.size()
 }
 
 fn main() {
-    let population_test = get_input(include_str!("../input_test.txt"));
-    let population = get_input(include_str!("../input.txt"));
-    println!("test: {}", population_after_n_days(80, &population_test));
-    println!("{}", population_after_n_days(80, &population));
-    println!("test: {}", population_after_n_days(256, &population_test));
-    println!("{}", population_after_n_days(256, &population));
+    let fishes_test = get_input(include_str!("../input_test.txt"));
+    let fishes = get_input(include_str!("../input.txt"));
+    println!("test: {}", population_after_n_days(80, &fishes_test));
+    println!("{}", population_after_n_days(80, &fishes));
+    println!("test: {}", population_after_n_days(256, &fishes_test));
+    println!("{}", population_after_n_days(256, &fishes));
 }
