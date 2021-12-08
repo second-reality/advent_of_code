@@ -2,20 +2,23 @@ use std::collections::HashSet;
 
 use itertools::Itertools;
 
-fn get_line(s: &str) -> Vec<String> {
+fn get_line(s: &str) -> (Vec<String>, Vec<String>) {
     let mut line = s.split(" | ");
-    let right = line.nth(1).unwrap();
-    right.split_whitespace().map(String::from).collect()
+    let left = line.next().unwrap();
+    let left = left.split_whitespace().map(String::from).collect();
+    let right = line.next().unwrap();
+    let right = right.split_whitespace().map(String::from).collect();
+    (left, right)
 }
 
-fn get_input(s: &str) -> Vec<Vec<String>> {
+fn get_input(s: &str) -> Vec<(Vec<String>, Vec<String>)> {
     s.lines().map(get_line).collect()
 }
 
-fn get_possible_digit(s: &str, permutation: &[&char]) -> Option<u8> {
+fn get_possible_digit(s: &str, permutation: &[char]) -> Option<u8> {
     assert_eq!(7, permutation.len());
     let mut changed = String::from(s);
-    for (index, &&val) in permutation.iter().enumerate() {
+    for (index, &val) in permutation.iter().enumerate() {
         changed = changed.replace(&val.to_string(), &index.to_string());
     }
     changed = changed.chars().sorted().collect();
@@ -43,14 +46,14 @@ fn get_possible_digit(s: &str, permutation: &[&char]) -> Option<u8> {
 fn possible_segments(s: &str) -> HashSet<Vec<char>> {
     let segments = vec!['a', 'b', 'c', 'd', 'e', 'f', 'g'];
     let mut working = HashSet::new();
-    for perm in segments
+    segments
         .iter()
+        .copied()
         .permutations(segments.len())
         .filter(|p| get_possible_digit(s, p).is_some())
-    {
-        let v: Vec<char> = perm.into_iter().copied().collect();
-        working.insert(v);
-    }
+        .for_each(|perm| {
+            working.insert(perm.into_iter().collect());
+        });
     working
 }
 
@@ -78,19 +81,44 @@ fn unique_digits(words: &[Vec<String>]) -> usize {
         .count()
 }
 
+fn unique_permutation(patterns: &[&str]) -> Vec<char> {
+    let mut possible = possible_segments(patterns[0]);
+    for s in patterns {
+        possible = possible
+            .intersection(&possible_segments(s))
+            .cloned()
+            .collect();
+        //println!("From: {}: {:?}", s, blop);
+    }
+    assert_eq!(1, possible.len());
+    let unique = possible.iter().next().unwrap();
+    unique.clone()
+}
+
+fn right_part(v: &[(Vec<String>, Vec<String>)]) -> Vec<Vec<String>> {
+    v.iter().map(|(_, r)| r).cloned().collect()
+}
+
+fn one_display((patterns, numbers): &(Vec<String>, Vec<String>)) -> i64 {
+    let patterns: Vec<&str> = patterns.iter().map(String::as_str).collect();
+    let perm = unique_permutation(&patterns);
+    let digits: Vec<u8> = numbers
+        .iter()
+        .map(|s| get_possible_digit(s, &perm).unwrap())
+        .collect();
+    let mut res: i64 = 0;
+    for d in digits {
+        res *= 10;
+        res += d as i64;
+    }
+    res
+}
+
 fn main() {
     let input = get_input(include_str!("../input.txt"));
     let test = get_input(include_str!("../test_input.txt"));
-    println!("test {}", unique_digits(&test));
-    println!("{}", unique_digits(&input));
-
-    let test = [
-        "be", "cfbegad", "cbdgef", "fgaecd", "cgeb", "fdcge", "agebfd", "fecdb", "fabcd", "edb",
-    ];
-    let mut blop = possible_segments(test[0]);
-    for s in test {
-        blop = blop.intersection(&possible_segments(s)).cloned().collect();
-        println!("From: {}: {:?}", s, blop);
-    }
-    assert_eq!(1, blop.len());
+    println!("test {}", unique_digits(&right_part(&test)));
+    println!("{}", unique_digits(&right_part(&input)));
+    println!("test {}", test.iter().map(|x| one_display(x)).sum::<i64>());
+    println!("{}", input.iter().map(|x| one_display(x)).sum::<i64>());
 }
