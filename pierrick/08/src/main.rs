@@ -117,6 +117,10 @@ fn one_display((patterns, numbers): &(Vec<String>, Vec<String>)) -> i64 {
 fn main() {
     let input = get_input(include_str!("../input.txt"));
     let test = get_input(include_str!("../test_input.txt"));
+    println!("--------------------");
+    println!("This code is shitty bruteforce approach, you should use:");
+    println!("cargo run --release");
+    println!("--------------------");
     println!("test {}", unique_digits(&right_part(&test)));
     println!("{}", unique_digits(&right_part(&input)));
     println!("test {}", test.iter().map(|x| one_display(x)).sum::<i64>());
