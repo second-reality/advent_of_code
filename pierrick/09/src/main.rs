@@ -1,4 +1,5 @@
 use itertools::*;
+use std::collections::HashSet;
 
 struct HeightMap {
     width: i32,
@@ -50,6 +51,39 @@ impl HeightMap {
             .filter(|(x, y)| self.is_lower_than_neighbours(*x, *y))
             .collect()
     }
+
+    fn basin_from(&self, x: i32, y: i32) -> Basin {
+        let mut res = Basin::new();
+        res.add_point(x, y, self);
+        res
+    }
+}
+
+struct Basin {
+    points: HashSet<(i32, i32)>,
+}
+
+impl Basin {
+    fn new() -> Self {
+        Basin {
+            points: HashSet::new(),
+        }
+    }
+
+    fn add_point(&mut self, x: i32, y: i32, hm: &HeightMap) {
+        match hm.value(x, y) {
+            Some(9) => return,
+            None => return,
+            _ => (),
+        }
+
+        if self.points.insert((x, y)) {
+            self.add_point(x - 1, y, hm);
+            self.add_point(x + 1, y, hm);
+            self.add_point(x, y - 1, hm);
+            self.add_point(x, y + 1, hm);
+        }
+    }
 }
 
 fn get_input(s: &str) -> HeightMap {
@@ -68,9 +102,22 @@ fn part1(hm: &HeightMap) -> u32 {
         .sum()
 }
 
+fn part2(hm: &HeightMap) -> usize {
+    hm.low_points()
+        .into_iter()
+        .map(|(x, y)| hm.basin_from(x, y))
+        .map(|set| set.points.len())
+        .sorted()
+        .rev()
+        .take(3)
+        .product::<usize>()
+}
+
 fn main() {
     let test = get_input(include_str!("../input_test"));
     let input = get_input(include_str!("../input"));
     println!("test {}", part1(&test));
     println!("{}", part1(&input));
+    println!("test {}", part2(&test));
+    println!("{}", part2(&input));
 }
