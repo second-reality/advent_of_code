@@ -1,3 +1,5 @@
+use itertools::*;
+
 struct HeightMap {
     width: i32,
     height: i32,
@@ -42,6 +44,12 @@ impl HeightMap {
             && lower_than(val, self.value(x, y - 1))
             && lower_than(val, self.value(x, y + 1))
     }
+
+    fn low_points(&self) -> Vec<(i32, i32)> {
+        iproduct!(0..self.width, 0..self.height)
+            .filter(|(x, y)| self.is_lower_than_neighbours(*x, *y))
+            .collect()
+    }
 }
 
 fn get_input(s: &str) -> HeightMap {
@@ -54,16 +62,10 @@ fn get_input(s: &str) -> HeightMap {
 }
 
 fn part1(hm: &HeightMap) -> u32 {
-    let mut res = 0;
-    for x in 0..hm.width {
-        for y in 0..hm.height {
-            let lower = hm.is_lower_than_neighbours(x, y);
-            if lower {
-                res += hm.value(x, y).unwrap() + 1;
-            }
-        }
-    }
-    res
+    hm.low_points()
+        .into_iter()
+        .map(|(x, y)| hm.value(x, y).unwrap() + 1)
+        .sum()
 }
 
 fn main() {
