@@ -526,3 +526,20 @@ def debug(*args)
   puts "debug: " + args.map(&:to_s).join(" ")
   args.length == 1 ? args.first : args
 end
+
+
+# ##############################################################################
+
+fail if RUBY_VERSION.to_f < 2.7
+
+if $PROGRAM_NAME == __FILE__
+
+  proc, *args = ARGV
+
+  proc ||= private_methods.filter {_1.to_s.match?(/d\d{5}/) }.sort.last
+
+  debug("call #{proc} ( #{args} )")
+
+  p self.send(proc.to_sym, *args)
+
+end
