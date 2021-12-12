@@ -8,6 +8,50 @@
 
 # ###########################################################################
 #
+# 2021 DAY 12
+#
+# ###########################################################################
+
+# 5228
+def d21121()
+  @segments = input(2112).split("\n")
+      .map{ _1.split("-") }.map { [_1, _1.reverse] }.flatten(1)
+
+  def visit(path, cave)
+    return [path] if cave == "end"
+    sseen = path.map(&:last).filter{ _1.match?(/^[[:lower:]]/) }
+    nexts = @segments
+      .filter{ |s, _| s == cave }
+      .filter{ |_, e| e != "start" }
+      .filter{ |_, e| not sseen.include? e }
+    nexts.map { |seg| visit(path + [seg], seg.last) }.flatten(1)
+  end
+
+  visit([], "start").length
+end
+
+# 131228
+def d21122()
+  @segments = input(2112).split("\n")
+      .map{ _1.split("-") }.map { [_1, _1.reverse] }.flatten(1)
+
+  def visit(path, cave)
+    return [path] if cave == "end"
+    sseen = path.map(&:last).filter{ _1.match?(/^[[:lower:]]/) }
+    nexts = @segments
+      .filter{ |s, _| s == cave }
+      .filter{ |_, e| e != "start" }
+      .filter{ |_, e| (sseen + [e]).tally.values.count(2) <= 1 }
+      .filter{ |_, e| (sseen + [e]).tally.values.max <= 2 }
+    nexts.map { |seg| visit(path + [seg], seg.last) }.flatten(1)
+  end
+
+  visit([], "start").length
+end
+
+
+# ###########################################################################
+#
 # 2021 DAY 11
 #
 # ###########################################################################
