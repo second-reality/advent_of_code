@@ -1,5 +1,24 @@
 use std::collections::{HashMap, HashSet};
 
+#[derive(Default, Clone, Eq, PartialEq, Debug)]
+struct Path {
+    caves: Vec<String>,
+    visited: HashMap<String, usize>,
+}
+
+impl Path {
+    fn enter_cave(&mut self, s: &str) {
+        let s = String::from(s);
+        *self.visited.entry(s.clone()).or_default() += 1;
+        self.caves.push(s);
+    }
+
+    fn exit_cave(&mut self) {
+        let left = self.caves.pop().unwrap();
+        *self.visited.entry(left).or_default() -= 1;
+    }
+}
+
 #[derive(Default, Debug)]
 struct CaveMap {
     paths: HashMap<String, HashSet<String>>,
@@ -9,10 +28,7 @@ impl CaveMap {
     fn add_connection(&mut self, left: &str, right: &str) {
         let left = String::from(left);
         let right = String::from(right);
-        self.paths
-            .entry(left)
-            .or_insert_with(HashSet::new)
-            .insert(right);
+        self.paths.entry(left).or_default().insert(right);
     }
 
     fn is_small_cave(name: &str) -> bool {
@@ -23,28 +39,31 @@ impl CaveMap {
         &self,
         start: &str,
         end: &str,
-        visited: &[String],
-        can_visit: fn(&str, &[String]) -> bool,
-    ) -> HashSet<Vec<String>> {
-        let mut visited = visited.to_owned();
-        visited.push(String::from(start));
+        path: &mut Path,
+        can_visit: fn(&str, &Path) -> bool,
+    ) -> Vec<Path> {
+        path.enter_cave(start);
 
-        //println!("from {} to {}", start, end);
-
-        if start == end {
-            HashSet::from_iter([visited])
+        let res = if start == end {
+            vec![path.clone()]
         } else {
-            let mut res = HashSet::new();
+            let possibles: Vec<&String> = self.paths[start]
+                .iter()
+                .filter(|dest| can_visit(dest, path))
+                .collect();
 
-            for dest in self.paths[start].iter() {
-                if can_visit(dest, &visited) {
-                    let new_paths = self.explore_paths(dest, end, &visited, can_visit);
-                    res.extend(new_paths);
-                }
-            }
+            possibles
+                .iter()
+                .map(|dest| self.explore_paths(dest, end, path, can_visit))
+                .fold(Vec::new(), |mut acc, new_paths| {
+                    acc.extend(new_paths);
+                    acc
+                })
+        };
 
-            res
-        }
+        path.exit_cave();
+
+        res
     }
 }
 
@@ -64,28 +83,30 @@ fn get_input(s: &str) -> CaveMap {
 fn part1(s: &str) -> usize {
     let cave = get_input(s);
 
-    fn can_visit(dest: &str, visited: &[String]) -> bool {
+    fn can_visit(dest: &str, path: &Path) -> bool {
         if CaveMap::is_small_cave(dest) {
-            let was_seen = visited.iter().any(|cave| cave == dest);
-            !was_seen
+            let num_seen = *path.visited.get(dest).unwrap_or(&0);
+            num_seen == 0
         } else {
             true
         }
     }
-    cave.explore_paths("start", "end", &[], can_visit).len()
+    cave.explore_paths("start", "end", &mut Path::default(), can_visit)
+        .len()
 }
 
 fn part2(s: &str) -> usize {
     let cave = get_input(s);
 
-    fn can_visit(dest: &str, visited: &[String]) -> bool {
+    fn can_visit(dest: &str, path: &Path) -> bool {
         if CaveMap::is_small_cave(dest) {
-            let small_was_visited_twice = visited
+            let small_was_visited_twice = path
+                .visited
                 .iter()
-                .filter(|cave| CaveMap::is_small_cave(cave))
-                .map(|cave| visited.iter().filter(|c| *c == cave).count())
-                .any(|count| count > 1);
-            let num_seen = visited.iter().filter(|cave| *cave == dest).count();
+                .filter(|(cave, _)| CaveMap::is_small_cave(cave))
+                .map(|(_, count)| count)
+                .any(|count| *count > 1);
+            let num_seen = path.visited.get(dest).unwrap_or(&0).to_owned();
 
             if small_was_visited_twice || dest == "start" || dest == "end" {
                 num_seen == 0
@@ -96,7 +117,8 @@ fn part2(s: &str) -> usize {
             true
         }
     }
-    cave.explore_paths("start", "end", &[], can_visit).len()
+    cave.explore_paths("start", "end", &mut Path::default(), can_visit)
+        .len()
 }
 
 fn main() {
