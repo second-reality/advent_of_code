@@ -12,6 +12,54 @@
 #
 # ###########################################################################
 
+# 682
+def d21131()
+  dots, flds = input(2113).split("\n\n").then { |d, f|
+    [ d.scan(/(\d+),(\d+)/).map { |x, y| [x.to_i, y.to_i ] },
+      f.scan(/(\w+)=(\d+)/).map { |c, v| [c, v.to_i] } ] }
+
+  flds.take(1)
+    .reduce(dots) { |acc, (ax, vl)|
+      acc.map { |x, y|
+        ( ax == "x" ) ? ( (x < vl) ? [x, y] : [vl * 2 - x, y] ) :
+        ( ax == "y" ) ? ( (y < vl) ? [x, y] : [x, vl * 2 - y] ) : fail
+      }.uniq
+  }.length
+end
+
+# FAGURZHE
+def d21132()
+  dots, flds = input(2113).split("\n\n").then { |d, f|
+    [ d.scan(/(\d+),(\d+)/).map { |x, y| [x.to_i, y.to_i ] },
+      f.scan(/(\w+)=(\d+)/).map { |c, v| [c, v.to_i] } ] }
+
+  flds
+    .reduce(dots) { |acc, (ax, vl)|
+      acc.map { |x, y|
+        ( ax == "x" ) ? ( (x < vl) ? [x, y] : [vl * 2 - x, y] ) :
+        ( ax == "y" ) ? ( (y < vl) ? [x, y] : [x, vl * 2 - y] ) : fail
+      }.uniq }
+    .then { |dots|
+      xmax, ymax = dots.map(&:first).max, dots.map(&:last).max
+      (0..ymax).map{ |y| (0..xmax).map{ |x|
+        dots.include?([x, y]) ? "#" : " " }.join(" ") }.join("\n") }
+    .then { puts _1 }
+end
+
+#  # # # #     # #       # #     #     #   # # #     # # # #   #     #   # # # #
+#  #         #     #   #     #   #     #   #     #         #   #     #   #
+#  # # #     #     #   #         #     #   #     #       #     # # # #   # # #
+#  #         # # # #   #   # #   #     #   # # #       #       #     #   #
+#  #         #     #   #     #   #     #   #   #     #         #     #   #
+#  #         #     #     # # #     # #     #     #   # # # #   #     #   # # # #
+
+
+# ###########################################################################
+#
+# 2021 DAY 12
+#
+# ###########################################################################
+
 # 5228
 def d21121()
   @segments = input(2112).split("\n")
@@ -563,7 +611,7 @@ end
 # ##############################################################################
 
 def input(id)
-  IO.read("inputs/#{id}.in")
+  IO.read("#{File.dirname(__FILE__)}/inputs/#{id}.in")
 end
 
 def debug(*args)
