@@ -18,7 +18,7 @@ fn part1(input: &'static str)
         }
     }
 
-    println!("depth * horizontal_pos = {}", depth * horizontal_pos);
+    println!("{}", depth * horizontal_pos);
 }
 
 fn part2(input: &'static str)
@@ -42,7 +42,7 @@ fn part2(input: &'static str)
         }
     }
 
-    println!("depth * horizontal_pos = {}", depth * horizontal_pos);
+    println!("{}", depth * horizontal_pos);
 }
 
 fn main() {

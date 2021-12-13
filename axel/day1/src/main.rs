@@ -29,7 +29,7 @@ fn main() {
     }
 
 
-    println!("part 1 : {}", increase_cmpt);
-    println!("part 2 : {}", increase_cmpt_part2);
+    println!("{}", increase_cmpt);
+    println!("{}", increase_cmpt_part2);
 }
 

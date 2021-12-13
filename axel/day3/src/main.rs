@@ -18,6 +18,5 @@ fn main() {
 
     let result  = gamma_rate * (2_i32.pow(num_columns as u32) - 1 - gamma_rate);
 
-    println!("gamma :  {}, epsilon : {}", gamma_rate, (2_i32.pow(num_columns as u32) - 1 - gamma_rate));
-    println!("Result part 1 : {}", result);
+    println!("{}", result);
 }
