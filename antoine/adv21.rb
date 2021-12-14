@@ -8,7 +8,64 @@
 
 # ###########################################################################
 #
-# 2021 DAY 12
+# 2021 DAY 14
+#
+# ###########################################################################
+
+# 2937
+def d21141()
+  tmpl, ruls = input(2114).split("\n\n").then { |t, r|
+    [t, r.scan(/(\w+) -> (\w+)/).to_h] }
+
+  (1..10).reduce(tmpl) { |tmp, _|
+    tmp.chars.each_cons(2)
+      .map { |p| [p.first, ruls[p.join], p.last] }
+      .reduce { |acc, obj| acc + obj.drop(1) }
+      .join }
+    .chars.tally.values.minmax.then { |min, max| max - min }
+end
+
+# NNCB
+# CH -> B  HH -> N  CB -> H  NH -> C
+# HB -> C  HC -> B  HN -> C  NN -> C
+# BH -> H  NC -> B  NB -> B  BN -> B
+# BB -> N  BC -> B  CC -> N  CN -> C
+
+# NNCB
+#   {["N", "N"]=>1, ["N", "C"]=>1, ["C", "B"]=>1}
+# NCNBCHB
+#   {"N" => 1} + {"N"=>1, "C"=>2, "B"=>1, "H"=>1}
+#   {["N", "C"]=>1, ["C", "N"]=>1, ["N", "B"]=>1, ["B", "C"]=>1, ["C", "H"]=>1, ["H", "B"]=>1}
+# NBCCNBBBCBHCB
+#   {"N" => 1} + {"N"=>2, "B"=>6, "C"=>3, "H"=>1}
+# NBBBCNCCNBBNBNBBCHBHHBCHB
+
+# 3390034818249
+def d21142()
+  tmpl, ruls = input(2114).split("\n\n").then { |t, r|
+    [t, r.scan(/(\w+) -> (\w+)/).to_h] }
+
+  frst = tmpl.chars.first
+  pcnt = tmpl.chars.each_cons(2).tally
+
+  (1..40)
+    # compute new pairs count
+    .reduce(pcnt) { |pcnt, _|
+      pcnt
+      .map { |(c1, c2), n| ci = ruls[c1 + c2]; {[c1, ci] => n, [ci, c2] => n} }
+      .reduce({}) { |acc, cnt| acc.merge(cnt) { |_, old, new| old + new } }
+    }
+    # once finished, compute chars count (first char + last char of pairs)
+    .reduce({ frst => 1 }) { |acc, ((_, c), n)|
+      acc.merge( { c => n } ) { |_, old, new| old + new }
+    }
+    .values.minmax.then { |min, max| max - min }
+end
+
+
+# ###########################################################################
+#
+# 2021 DAY 13
 #
 # ###########################################################################
 
