@@ -66,6 +66,53 @@ def d21152()
   end
 end
 
+# [1] 1  6  3  7  5  1  7  4  2
+# [1] 3  8  1  3  7  3  6  7  2
+# [2][1][3][6][5][1][1] 3  2  8
+#  3  6  9  4  9  3 [1][5] 6  9
+#  7  4  6  3  4  1  7 [1][1] 1
+#  1  3  1  9  1  2  8  1 [3] 7
+#  1  3  5  9  9  1  2  4 [2] 1
+#  3  1  2  5  4  2  1  6 [3] 9
+#  1  2  9  3  1  3  8  5 [2][1]
+#  2  3  1  1  9  4  4  5  8 [1]
+
+def d2115viz()
+  cavern =
+    input(2115.0).split("\n").each_with_index.map { |l, y|
+      l.chars.each_with_index.map { |c, x| [[x, y], c.to_i]}
+    }.flatten(1).to_h
+
+  cmax, nmul = cavern.keys.max.first, 5
+  cavern =
+    (0...nmul).map { |nx| (0...nmul).map { |ny|
+      cavern.map { |(x, y), v|
+        [ [nx * (cmax + 1) + x, ny * (cmax + 1) + y],
+          ((v - 1 + nx + ny) % 9) + 1 ]
+      } } }.flatten(2).to_h
+
+  visited, tovisit, dest = Set[], {[0, 0] => [0, [[0, 0]]]}, cavern.keys.max
+  cmax = cavern.keys.max.first
+  while true
+    pos, (cst, path) = tovisit.sort_by {|k, (c, p)| c}.first
+    puts "\033[?25l\033[#{cmax + 1}A" +
+         (0..cmax).map { |y| (0..cmax).map { |x|
+           color = path.include?([x, y])?31:visited.include?([x, y])?0:30
+           "\033[#{color};1m#{cavern[[x, y]]}\033[0m"
+    }.join }.join("\n") + "\033[?25h"
+    return cst if pos == dest
+    tovisit.delete(pos)
+    visited.add(pos)
+    nexts =
+      pos.then { |x, y| [[x + 1, y], [x, y + 1], [x - 1, y], [x, y - 1]] }
+        .filter { |npos| cavern.include? npos}
+        .filter { |npos| not visited.include? npos }
+        .map { |npos| [npos, [cst + cavern[npos], path + [npos]]] }.to_h
+    tovisit.update(nexts) { |_, (old, po), (new, pn)|
+      (old <= new) ? [old, po] : [new, pn] }
+  end
+end
+
 
 # ###########################################################################
 #
