@@ -1,10 +1,71 @@
 #!/usr/bin/env ruby
 
+require 'set'
+
 # ##############################################################################
 
 # load "adv21.rb" ; d21011()
 
 # ##############################################################################
+
+# ###########################################################################
+#
+# 2021 DAY 15
+#
+# ###########################################################################
+
+# 745
+def d21151()
+  cavern =
+    input(2115).split("\n").each_with_index.map { |l, y|
+      l.chars.each_with_index.map { |c, x| [[x, y], c.to_i]}
+    }.flatten(1).to_h
+
+  visited, tovisit, dest = Set[], {[0, 0] => 0}, cavern.keys.max
+  while true
+    pos, cst = tovisit.sort_by(&:last).first
+    return cst if pos == dest
+    tovisit.delete(pos)
+    visited.add(pos)
+    nexts =
+      pos.then { |x, y| [[x + 1, y], [x, y + 1], [x - 1, y], [x, y - 1]] }
+        .filter { |npos| cavern.include? npos}
+        .filter { |npos| not visited.include? npos }
+        .map { |npos| [npos, cst + cavern[npos]] }.to_h
+    tovisit.update(nexts) { |_, old, new| (old <= new) ? old : new }
+  end
+end
+
+# 3002
+def d21152()
+  cavern =
+    input(2115).split("\n").each_with_index.map { |l, y|
+      l.chars.each_with_index.map { |c, x| [[x, y], c.to_i]}
+    }.flatten(1).to_h
+
+  cmax, nmul = cavern.keys.max.first, 5
+  cavern =
+    (0...nmul).map { |nx| (0...nmul).map { |ny|
+      cavern.map { |(x, y), v|
+        [ [nx * (cmax + 1) + x, ny * (cmax + 1) + y],
+          ((v - 1 + nx + ny) % 9) + 1 ]
+      } } }.flatten(2).to_h
+
+  visited, tovisit, dest = Set[], {[0, 0] => 0}, cavern.keys.max
+  while true
+    pos, cst = tovisit.sort_by(&:last).first
+    return cst if pos == dest
+    tovisit.delete(pos)
+    visited.add(pos)
+    nexts =
+      pos.then { |x, y| [[x + 1, y], [x, y + 1], [x - 1, y], [x, y - 1]] }
+        .filter { |npos| cavern.include? npos}
+        .filter { |npos| not visited.include? npos }
+        .map { |npos| [npos, cst + cavern[npos]] }.to_h
+    tovisit.update(nexts) { |_, old, new| (old <= new) ? old : new }
+  end
+end
+
 
 # ###########################################################################
 #
