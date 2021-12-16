@@ -10,6 +10,112 @@ require 'set'
 
 # ###########################################################################
 #
+# 2021 DAY 16
+#
+# ###########################################################################
+
+def getpack2116()
+  def getpack(bits)
+    pck_ver = bits.shift(3).join.to_i(2)
+    pck_typ = bits.shift(3).join.to_i(2)
+    if pck_typ == 4 then # literal
+      pck_val = []
+      loop do
+        keep = bits.shift(1).first
+        pck_val.push( bits.shift(4) )
+        break if keep.zero?
+      end
+      pck_val = pck_val.join.to_i(2)
+      {ver: pck_ver, typ: pck_typ, val: pck_val}
+    else # operator
+      pck_lty = bits.shift(1).first
+      if pck_lty.zero?
+        sub_bln = bits.shift(15).join.to_i(2)
+        sub_bts = bits.shift(sub_bln)
+        sub_pks = []
+        while not sub_bts.empty?
+          sub_pks.push( getpack(sub_bts) )
+        end
+      else
+        pck_nsb = bits.shift(11).join.to_i(2)
+        sub_pks = pck_nsb.times.map { getpack(bits) }
+      end
+      {ver: pck_ver, typ: pck_typ, subs: sub_pks}
+    end
+  end
+
+  input(2116)
+    .chars.map { |c| c.to_i(16).to_s(2).rjust(4, "0").chars.map(&:to_i) }
+    .flatten
+    .then { |bits| getpack(bits) }
+end
+
+# 934
+def d21161()
+  def evalpack(pck)
+    pck[:ver] + (pck[:subs] || []).map { |sub| evalpack(sub) }.sum
+  end
+
+  evalpack(getpack2116())
+end
+
+# Packets with type ID 0 are sum packets
+# - their value is the sum of the values of their sub-packets.
+#   If they only have a single sub-packet, their value is the value of the sub-packet.
+# Packets with type ID 1 are product packets
+# - their value is the result of multiplying together the values of their sub-packets.
+#   If they only have a single sub-packet, their value is the value of the sub-packet.
+# Packets with type ID 2 are minimum packets
+# - their value is the minimum of the values of their sub-packets.
+# Packets with type ID 3 are maximum packets
+# - their value is the maximum of the values of their sub-packets.
+# Packets with type ID 5 are greater than packets
+# - their value is 1 if the value of the first sub-packet is greater than
+#   the value of the second sub-packet; otherwise, their value is 0.
+#   These packets always have exactly two sub-packets.
+# Packets with type ID 6 are less than packets
+# - their value is 1 if the value of the first sub-packet is less than
+#   the value of the second sub-packet; otherwise, their value is 0.
+#   These packets always have exactly two sub-packets.
+# Packets with type ID 7 are equal to packets
+# - their value is 1 if the value of the first sub-packet is equal to
+#   the value of the second sub-packet; otherwise, their value is 0.
+#   These packets always have exactly two sub-packets.
+
+# 912901337844
+def d21162()
+  def evalpack(pck)
+    case pck[:typ]
+    when 4 then # literal
+      pck[:val]
+    when 0 then # sum
+      pck[:subs].map { |s| evalpack(s) }.reduce(:+)
+    when 1 then # product
+      pck[:subs].map { |s| evalpack(s) }.reduce(:*)
+    when 2 then # minimum
+      pck[:subs].map { |s| evalpack(s) }.min
+    when 3 then # maximum
+      pck[:subs].map { |s| evalpack(s) }.max
+    when 5 then # greater than
+      sub1, sub2 = pck[:subs].map { |s| evalpack(s) }
+      ( sub1 > sub2 ) ? 1 : 0
+    when 6 then # less than
+      sub1, sub2 = pck[:subs].map { |s| evalpack(s) }
+      ( sub1 < sub2 ) ? 1 : 0
+    when 7 then # less than
+      sub1, sub2 = pck[:subs].map { |s| evalpack(s) }
+      ( sub1 == sub2 ) ? 1 : 0
+    else
+      fail
+    end
+  end
+
+  evalpack(getpack2116())
+end
+
+
+# ###########################################################################
+#
 # 2021 DAY 15
 #
 # ###########################################################################
