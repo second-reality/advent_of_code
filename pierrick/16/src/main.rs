@@ -119,10 +119,6 @@ impl Message {
         }
     }
 
-    fn end(&self) -> bool {
-        self.data.is_empty() || self.data.iter().all(|b| *b == 0)
-    }
-
     fn offset(&self) -> usize {
         self.data.len()
     }
@@ -153,50 +149,43 @@ impl Message {
         let packet_type = self.packet_type();
         self.trace.push(Trace::PacketType(packet_type));
 
+        let sub = match packet_type {
+            PacketType::LitteralValue => vec![],
+            _ => self.subpackets(),
+        };
+
         match packet_type {
             PacketType::LitteralValue => {
                 let val = self.litteral_value();
                 self.trace.push(Trace::LitteralValue(val));
                 val as i64
             }
-            PacketType::Sum => self.subpackets().iter().sum(),
-            PacketType::Product => self.subpackets().iter().product(),
-            PacketType::Minimum => *self.subpackets().iter().min().unwrap(),
-            PacketType::Maximum => *self.subpackets().iter().max().unwrap(),
-            PacketType::Equal => {
-                let sub = self.subpackets();
-                (sub[0] == sub[1]).into()
-            }
-            PacketType::GreaterThan => {
-                let sub = self.subpackets();
-                (sub[0] > sub[1]).into()
-            }
-            PacketType::LessThan => {
-                let sub = self.subpackets();
-                (sub[0] < sub[1]).into()
-            }
+            PacketType::Sum => sub.iter().sum(),
+            PacketType::Product => sub.iter().product(),
+            PacketType::Minimum => *sub.iter().min().unwrap(),
+            PacketType::Maximum => *sub.iter().max().unwrap(),
+            PacketType::Equal => (sub[0] == sub[1]).into(),
+            PacketType::GreaterThan => (sub[0] > sub[1]).into(),
+            PacketType::LessThan => (sub[0] < sub[1]).into(),
         }
     }
 
-    fn parse(&mut self) -> i64 {
-        let res = self.packet();
-        assert!(self.end());
-        res
+    fn end(&self) -> bool {
+        self.data.is_empty() || self.data.iter().all(|b| *b == 0)
     }
 }
 
 fn parse(data: &str) -> (i64, Vec<Trace>) {
     let data = get_input(data.trim());
     let mut msg = Message::new(&data);
-    let val = msg.parse();
+    let val = msg.packet();
+    assert!(msg.end());
     (val, msg.trace)
 }
 
-const INPUT: &str = include_str!("../input");
-
 fn part1(s: &str) -> usize {
-    let (_, trace) = parse(s);
-    trace
+    parse(s)
+        .1
         .iter()
         .map(|e| match e {
             Trace::PacketVersion(version) => *version as usize,
@@ -206,9 +195,10 @@ fn part1(s: &str) -> usize {
 }
 
 fn part2(s: &str) -> i64 {
-    let (val, _) = parse(s);
-    val
+    parse(s).0
 }
+
+const INPUT: &str = include_str!("../input");
 
 fn main() {
     assert_eq!(16, part1("8A004A801A8002F478"));
