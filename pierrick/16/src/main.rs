@@ -92,7 +92,7 @@ impl Message {
             5 => PacketType::GreaterThan,
             6 => PacketType::LessThan,
             7 => PacketType::Equal,
-            _ => unreachable!()
+            _ => unreachable!(),
         }
     }
 
@@ -127,6 +127,25 @@ impl Message {
         self.data.len()
     }
 
+    fn subpackets(&mut self) -> Vec<i64> {
+        let length_type = self.length_type();
+        self.trace.push(Trace::LengthType(length_type));
+        let mut res = vec![];
+        match length_type {
+            LengthType::TotalLength(len) => {
+                let until = self.offset() - len as usize;
+                while self.offset() > until {
+                    res.push(self.packet());
+                }
+                assert!(self.offset() == until);
+            }
+            LengthType::NumberSubPackets(num_packets) => (0..num_packets).for_each(|_| {
+                res.push(self.packet());
+            }),
+        }
+        res
+    }
+
     fn packet(&mut self) -> i64 {
         let packet_version = self.packet_version();
         self.trace.push(Trace::PacketVersion(packet_version));
@@ -140,22 +159,21 @@ impl Message {
                 self.trace.push(Trace::LitteralValue(val));
                 val as i64
             }
-            _ => {
-                let length_type = self.length_type();
-                self.trace.push(Trace::LengthType(length_type));
-                match length_type {
-                    LengthType::TotalLength(len) => {
-                        let until = self.offset() - len as usize;
-                        while self.offset() > until {
-                            self.packet();
-                        }
-                        assert!(self.offset() == until);
-                    }
-                    LengthType::NumberSubPackets(num_packets) => {
-                        (0..num_packets).for_each(|_| { self.packet(); } )
-                    }
-                }
-                0
+            PacketType::Sum => self.subpackets().iter().sum(),
+            PacketType::Product => self.subpackets().iter().product(),
+            PacketType::Minimum => *self.subpackets().iter().min().unwrap(),
+            PacketType::Maximum => *self.subpackets().iter().max().unwrap(),
+            PacketType::Equal => {
+                let sub = self.subpackets();
+                (sub[0] == sub[1]).into()
+            }
+            PacketType::GreaterThan => {
+                let sub = self.subpackets();
+                (sub[0] > sub[1]).into()
+            }
+            PacketType::LessThan => {
+                let sub = self.subpackets();
+                (sub[0] < sub[1]).into()
             }
         }
     }
@@ -167,19 +185,17 @@ impl Message {
     }
 }
 
-fn parse(data: &str) -> Vec<Trace> {
+fn parse(data: &str) -> (i64, Vec<Trace>) {
     let data = get_input(data.trim());
     let mut msg = Message::new(&data);
-    msg.parse();
-    msg.trace
+    let val = msg.parse();
+    (val, msg.trace)
 }
 
-const TEST_LITTERAL: &str = "D2FE28";
-const TEST_OPERATOR: &str = "38006F45291200";
 const INPUT: &str = include_str!("../input");
 
 fn part1(s: &str) -> usize {
-    let trace = parse(s);
+    let (_, trace) = parse(s);
     trace
         .iter()
         .map(|e| match e {
@@ -189,10 +205,24 @@ fn part1(s: &str) -> usize {
         .sum()
 }
 
+fn part2(s: &str) -> i64 {
+    let (val, _) = parse(s);
+    val
+}
+
 fn main() {
     assert_eq!(16, part1("8A004A801A8002F478"));
     assert_eq!(12, part1("620080001611562C8802118E34"));
     assert_eq!(23, part1("C0015000016115A2E0802F182340"));
     assert_eq!(31, part1("A0016C880162017C3686B18A3D4780"));
     println!("{}", part1(INPUT));
+    assert_eq!(3, part2("C200B40A82"));
+    assert_eq!(54, part2("04005AC33890"));
+    assert_eq!(7, part2("880086C3E88112"));
+    assert_eq!(9, part2("CE00C43D881120"));
+    assert_eq!(1, part2("D8005AC2A8F0"));
+    assert_eq!(0, part2("F600BC2D8F"));
+    assert_eq!(0, part2("9C005AC2F8F0"));
+    assert_eq!(1, part2("9C0141080250320F1802104A08"));
+    println!("{}", part2(INPUT));
 }
