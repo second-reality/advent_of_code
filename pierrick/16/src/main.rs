@@ -31,7 +31,13 @@ fn test_parse() {
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]
 enum PacketType {
     LitteralValue,
-    Operator,
+    Sum,
+    Product,
+    Minimum,
+    Maximum,
+    GreaterThan,
+    LessThan,
+    Equal,
 }
 
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]
@@ -78,8 +84,15 @@ impl Message {
 
     fn packet_type(&mut self) -> PacketType {
         match self.read(3) {
+            0 => PacketType::Sum,
+            1 => PacketType::Product,
+            2 => PacketType::Minimum,
+            3 => PacketType::Maximum,
             4 => PacketType::LitteralValue,
-            _ => PacketType::Operator,
+            5 => PacketType::GreaterThan,
+            6 => PacketType::LessThan,
+            7 => PacketType::Equal,
+            _ => unreachable!()
         }
     }
 
@@ -114,7 +127,7 @@ impl Message {
         self.data.len()
     }
 
-    fn packet(&mut self) {
+    fn packet(&mut self) -> i64 {
         let packet_version = self.packet_version();
         self.trace.push(Trace::PacketVersion(packet_version));
 
@@ -125,8 +138,9 @@ impl Message {
             PacketType::LitteralValue => {
                 let val = self.litteral_value();
                 self.trace.push(Trace::LitteralValue(val));
+                val as i64
             }
-            PacketType::Operator => {
+            _ => {
                 let length_type = self.length_type();
                 self.trace.push(Trace::LengthType(length_type));
                 match length_type {
@@ -138,17 +152,18 @@ impl Message {
                         assert!(self.offset() == until);
                     }
                     LengthType::NumberSubPackets(num_packets) => {
-                        (0..num_packets).for_each(|_| self.packet())
+                        (0..num_packets).for_each(|_| { self.packet(); } )
                     }
                 }
+                0
             }
         }
     }
 
-    fn parse(&mut self) {
-        while !self.end() {
-            self.packet()
-        }
+    fn parse(&mut self) -> i64 {
+        let res = self.packet();
+        assert!(self.end());
+        res
     }
 }
 
@@ -175,30 +190,6 @@ fn part1(s: &str) -> usize {
 }
 
 fn main() {
-    assert_eq!(
-        vec![
-            Trace::PacketVersion(6),
-            Trace::PacketType(PacketType::LitteralValue),
-            Trace::LitteralValue(2021)
-        ],
-        parse(TEST_LITTERAL)
-    );
-
-    assert_eq!(
-        vec![
-            Trace::PacketVersion(1),
-            Trace::PacketType(PacketType::Operator),
-            Trace::LengthType(LengthType::TotalLength(27)),
-            Trace::PacketVersion(6),
-            Trace::PacketType(PacketType::LitteralValue),
-            Trace::LitteralValue(10),
-            Trace::PacketVersion(2),
-            Trace::PacketType(PacketType::LitteralValue),
-            Trace::LitteralValue(20)
-        ],
-        parse(TEST_OPERATOR)
-    );
-
     assert_eq!(16, part1("8A004A801A8002F478"));
     assert_eq!(12, part1("620080001611562C8802118E34"));
     assert_eq!(23, part1("C0015000016115A2E0802F182340"));
