@@ -10,6 +10,44 @@ require 'set'
 
 # ###########################################################################
 #
+# 2021 DAY 17
+#
+# ###########################################################################
+
+# "target area: x=241..275, y=-75..-49"
+# "target area: x=20..30, y=-10..-5"
+
+def shoot2117(vx, vy, x1, x2, y1, y2)
+  x, y, ymax = 0, 0, 0
+  loop do
+    return ymax if x.between?(x1, x2) and y.between?(y1, y2)
+    return nil if x > x2 or y < y1
+    x, y = x + vx, y + vy
+    ymax = ymax > y ? ymax : y
+    vx += (vx > 0) ? -1 : (vx == 0) ? 0 : fail
+    vy -= 1
+  end
+end
+
+# 2775
+def d21171()
+  x1, x2, y1, y2 = input(2117).scan(/[-0-9]+/).map(&:to_i)
+
+  (0..x2).map { |vx| (y1..100).map { |vy|
+    shoot2117(vx, vy, x1, x2, y1, y2) }.compact }.flatten.max
+end
+
+# 1566
+def d21172()
+  x1, x2, y1, y2 = input(2117).scan(/[-0-9]+/).map(&:to_i)
+
+  (0..x2).map { |vx| (y1..100).map { |vy|
+    shoot2117(vx, vy, x1, x2, y1, y2) }.compact }.flatten.length
+end
+
+
+# ###########################################################################
+#
 # 2021 DAY 16
 #
 # ###########################################################################
