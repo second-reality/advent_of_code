@@ -1,3 +1,5 @@
+use itertools::*;
+
 struct State {
     x: i64,
     y: i64,
@@ -28,7 +30,7 @@ impl State {
     }
 }
 
-fn highest_altitude(x_init: i64, y_init: i64, target: &Target) -> (i64, bool) {
+fn highest_altitude(x_init: i64, y_init: i64, target: &Target) -> Option<i64> {
     let mut state = State {
         x: 0,
         y: 0,
@@ -43,42 +45,27 @@ fn highest_altitude(x_init: i64, y_init: i64, target: &Target) -> (i64, bool) {
             && state.y >= target.y_min
             && state.y <= target.y_max
         {
-            return (state.max_y, true);
+            return Some(state.max_y);
         }
         state.step();
     }
 
-    (i64::MIN, false)
+    None
 }
 
-fn part1(target: &Target) -> (i64, i64, i64) {
-    let mut launches: Vec<(i64, i64, i64)> = vec![];
-
-    for x in -1000..1000 {
-        for y in -1000..1000 {
-            let (alt, found) = highest_altitude(x, y, target);
-            if found {
-                launches.push((x, y, alt));
-            }
-        }
-    }
-
-    let highest = *launches.iter().max_by_key(|launch| (*launch).2).unwrap();
-    highest
+fn altitudes(target: &Target) -> Vec<i64> {
+    iproduct!(-1000..1000, -1000..1000)
+        .map(|(x, y)| highest_altitude(x, y, target))
+        .flatten()
+        .collect()
 }
 
-fn part2(target: &Target) -> i64 {
-    let mut count = 0;
-    for x in -1000..1000 {
-        for y in -1000..1000 {
-            let (_, found) = highest_altitude(x, y, target);
-            if found {
-                count += 1;
-            }
-        }
-    }
+fn part1(target: &Target) -> i64 {
+    *altitudes(target).iter().max().unwrap()
+}
 
-    count
+fn part2(target: &Target) -> usize {
+    altitudes(target).len()
 }
 
 const INPUT: &Target = &Target {
@@ -95,9 +82,9 @@ const TEST: &Target = &Target {
 };
 
 fn main() {
-    assert_eq!(45, highest_altitude(6, 9, TEST).0);
+    assert_eq!(Some(45), highest_altitude(6, 9, TEST));
+    assert_eq!(45, part1(TEST));
     println!("{:?}", part1(INPUT));
-    assert_eq!((7, 9, 45), part1(TEST));
     assert_eq!(112, part2(TEST));
     println!("{:?}", part2(INPUT));
 }
