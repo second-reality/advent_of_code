@@ -10,6 +10,229 @@ require 'set'
 
 # ###########################################################################
 #
+# 2021 DAY 18
+#
+# ###########################################################################
+
+module D2118
+
+  # ##################################################################
+
+  # explodes(inp)
+  #   modifies its argument by performing first explosion
+  #   returns true if something changed, false otherwise
+
+  def explode(inp, elt = inp, crd = [])
+    case elt
+    in [Integer => e0, Integer => e1] if crd.length >= 4 then
+      # on a deep pair of numbers -> explode criteria met
+
+      def allnums(elt, crd = [])
+        return [crd] if elt.is_a? Integer
+        allnums(elt[0], crd + [0]) + allnums(elt[1], crd + [1])
+      end
+      allnums = allnums( inp )
+
+      # update first number on the right
+      idx = allnums.index(crd + [0]) - 1
+      if (0...allnums.length).include?(idx)
+        *hd, ls = allnums[idx]
+        hd.reduce(inp, :fetch)[ls] += e0
+      end
+
+      # update first number on the left
+      idx = allnums.index(crd + [1]) + 1
+      if (0...allnums.length).include?(idx)
+        *hd, ls = allnums[idx]
+        hd.reduce(inp, :fetch)[ls] += e1
+      end
+
+      # replace exploding pair by number 0
+      *hd, ls = crd
+      hd.reduce(inp, :fetch)[ls] = 0
+      return true # list was modified
+
+    in Integer then
+      # on a regular number -> nothing to do
+      return false # nothing changed
+
+    in [e0, e1] then
+      # on a pair -> look deeper
+      return (explode(inp, e0, crd + [0]) or explode(inp, e1, crd + [1]))
+    end
+  end
+
+  # ##################################################################
+
+  # split(inp)
+  #   modifies its argument by performing first split
+  #   returns true if something changed, false otherwise
+
+  def split(inp, elt = inp, crd = [])
+    case elt
+    in Integer => val if val >= 10 then
+      # on a number >= 10 -> split criteria met
+      # insert the new pair
+      *hd, ls = crd
+      hd.reduce(inp, :fetch)[ls] = [val.fdiv(2).floor, val.fdiv(2).ceil]
+      return true
+
+    in Integer then
+      # on another integer -> nothing to do
+      return false
+
+    in [e0, e1] then
+      # on a pair -> continue digging
+      return (split(inp, e0, crd + [0]) or split(inp, e1, crd + [1]))
+    end
+  end
+
+  # ##################################################################
+
+  # addred(lst)
+  #   returns reduced addition of given snaifish numbers in lst
+  #   ( does not modify anything )
+
+  def addred(lst)
+
+    def deepcp(elt)
+      case elt
+        in [_, _] then elt.map{ deepcp _1 }
+        in _      then elt
+      end
+    end
+
+    def reduce(inp)
+      loop do
+        next if explode(inp)
+        next if split(inp)
+        return inp
+      end
+    end
+
+    # lst must be copied first as it will be modified by explode & split
+    deepcp(lst).reduce { |acc, obj| reduce([acc, obj]) }
+  end
+
+  # ##################################################################
+
+  def magnitude(elt)
+    case elt
+    in Integer  then elt
+    in [e0, e1] then
+      3 * magnitude(e0) + 2 * magnitude(e1)
+    end
+  end
+
+  # ##################################################################
+end
+
+# 3699
+def d21181()
+  include D2118
+  input(2118).split("\n")
+    .then { |l| eval("[%s]" % l.join(",")) }
+    .then { |l| magnitude(addred(l)) }
+end
+
+# 4735
+def d21182()
+  include D2118
+  input(2118).split("\n")
+    .then { |l| eval("[%s]" % l.join(",")) }
+    .then { |l|
+      l.combination(2).map{ |a, b|
+        [ magnitude(addred([a, b])),
+          magnitude(addred([b, a])) ]
+      }.flatten.max }
+end
+
+def d2118unit()
+  include D2118
+
+  def testfunc(fct, inp) send(fct, inp); inp end
+
+  # ##################################################################
+  # explode
+  fail unless testfunc(:explode, [[[[[9,8],1],2],3],4]) == [[[[0,9],2],3],4]
+  fail unless testfunc(:explode, [[[[[9,8],1],2],3],4]) == [[[[0,9],2],3],4]
+  fail unless testfunc(:explode, [7,[6,[5,[4,[3,2]]]]]) == [7,[6,[5,[7,0]]]]
+  fail unless testfunc(:explode, [[6,[5,[4,[3,2]]]],1]) == [[6,[5,[7,0]]],3]
+  fail unless testfunc(:explode, [[3,[2,[1,[7,3]]]],[6,[5,[4,[3,2]]]]]) ==
+              [[3,[2,[8,0]]],[9,[5,[4,[3,2]]]]]
+  fail unless testfunc(:explode, [[3,[2,[8,0]]],[9,[5,[4,[3,2]]]]]) ==
+              [[3,[2,[8,0]]],[9,[5,[7,0]]]]
+  fail unless testfunc(:explode, [[[[[4,3],4],4],[7,[[8,4],9]]],[1,1]]) ==
+              [[[[0,7],4],[7,[[8,4],9]]],[1,1]]
+  fail unless testfunc(:explode, [[[[0,7],4],[7,[[8,4],9]]],[1,1]]) ==
+              [[[[0,7],4],[15,[0,13]]],[1,1]]
+  fail unless testfunc(:explode, [[[[0,7],4],[[7,8],[0,[6,7]]]],[1,1]]) ==
+              [[[[0,7],4],[[7,8],[6,0]]],[8,1]]
+
+  # ##################################################################
+  # split
+  fail unless testfunc(:split, [[[[0,7],4],[15,[0,13]]],[1,1]]) ==
+              [[[[0,7],4],[[7,8],[0,13]]],[1,1]]
+  fail unless testfunc(:split, [[[[0,7],4],[[7,8],[0,13]]],[1,1]]) ==
+              [[[[0,7],4],[[7,8],[0,[6,7]]]],[1,1]]
+
+  # ##################################################################
+  # addred
+  fail unless addred([[[[[4,3],4],4],[7,[[8,4],9]]],[1,1]]) ==
+              [[[[0,7],4],[[7,8],[6,0]]],[8,1]]
+  fail unless addred([[1,1],[2,2],[3,3],[4,4]]) ==
+              [[[[1,1],[2,2]],[3,3]],[4,4]]
+  fail unless addred([[1,1],[2,2],[3,3],[4,4],[5,5]]) ==
+              [[[[3,0],[5,3]],[4,4]],[5,5]]
+  fail unless addred([[1,1],[2,2],[3,3],[4,4],[5,5],[6,6]]) ==
+              [[[[5,0],[7,4]],[5,5]],[6,6]]
+  fail unless addred([ [[[0,[4,5]],[0,0]],[[[4,5],[2,6]],[9,5]]],
+                       [7,[[[3,7],[4,3]],[[6,3],[8,8]]]],
+                       [[2,[[0,8],[3,4]]],[[[6,7],1],[7,[1,6]]]],
+                       [[[[2,4],7],[6,[0,5]]],[[[6,8],[2,8]],[[2,1],[4,5]]]],
+                       [7,[5,[[3,8],[1,4]]]],
+                       [[2,[2,2]],[8,[8,1]]],
+                       [2,9],
+                       [1,[[[9,3],9],[[9,0],[0,7]]]],
+                       [[[5,[7,4]],7],1],
+                       [[[[4,2],2],6],[8,7]] ] ) ==
+              [[[[8,7],[7,7]],[[8,6],[7,7]]],[[[0,7],[6,6]],[8,7]]]
+  fail unless addred([ [[[0,[5,8]],[[1,7],[9,6]]],[[4,[1,2]],[[1,4],2]]],
+                       [[[5,[2,8]],4],[5,[[9,9],0]]],
+                       [6,[[[6,2],[5,6]],[[7,6],[4,7]]]],
+                       [[[6,[0,7]],[0,9]],[4,[9,[9,0]]]],
+                       [[[7,[6,4]],[3,[1,3]]],[[[5,5],1],9]],
+                       [[6,[[7,3],[3,2]]],[[[3,8],[5,7]],4]],
+                       [[[[5,4],[7,7]],8],[[8,3],8]],
+                       [[9,3],[[9,9],[6,[4,9]]]],
+                       [[2,[[7,7],7]],[[5,8],[[9,3],[0,2]]]],
+                       [[[[5,2],5],[8,[3,7]]],[[5,[7,5]],[4,4]]] ]) ==
+              [[[[6,6],[7,6]],[[7,7],[7,0]]],[[[7,7],[7,7]],[[7,8],[9,9]]]]
+
+  # ##################################################################
+  # magnitude
+  fail unless magnitude([9,1]) == 29
+  fail unless magnitude([1,9]) == 21
+  fail unless magnitude([[9,1],[1,9]]) == 129
+  fail unless magnitude([[1,2],[[3,4],5]]) == 143.
+  fail unless magnitude([[[[0,7],4],[[7,8],[6,0]]],[8,1]]) == 1384.
+  fail unless magnitude([[[[1,1],[2,2]],[3,3]],[4,4]]) == 445.
+  fail unless magnitude([[[[3,0],[5,3]],[4,4]],[5,5]]) == 791.
+  fail unless magnitude([[[[5,0],[7,4]],[5,5]],[6,6]]) == 1137.
+  fail unless magnitude(
+                [[[[8,7],[7,7]],[[8,6],[7,7]]],[[[0,7],[6,6]],[8,7]]]) == 3488
+  fail unless magnitude(
+                [[[[6,6],[7,6]],[[7,7],[7,0]]],[[[7,7],[7,7]],[[7,8],[9,9]]]]
+              ) == 4140
+  fail unless magnitude(
+                addred([ [[2,[[7,7],7]],[[5,8],[[9,3],[0,2]]]],
+                         [[[0,[5,8]],[[1,7],[9,6]]],[[4,[1,2]],[[1,4],2]]] ])
+              ) == 3993
+end
+
+
+# ###########################################################################
+#
 # 2021 DAY 17
 #
 # ###########################################################################
@@ -941,6 +1164,10 @@ if $PROGRAM_NAME == __FILE__
 
   debug("call #{proc} ( #{args} )")
 
+  fstr = Time.now
   p self.send(proc.to_sym, *args)
+  fend = Time.now
+
+  debug("took #{fend - fstr}s")
 
 end
