@@ -10,6 +10,92 @@ require 'set'
 
 # ###########################################################################
 #
+# 2021 DAY 19
+#
+# ###########################################################################
+
+module D2119
+
+  # 48 configs - should be 24 ???
+  ALL_ORIENTATIONS =
+    [0, 1, 2]
+      .permutation(3).to_a
+      .product([-1, 1].product([-1, 1], [-1, 1]))
+      .map { |a, b| a.zip(b) }
+
+  # if report n0 and report n1 overlap,
+  # -> update coordinates from report n1 relatively to n0 (absolute coord)
+  # -> return coordinates of scanner n1
+  def adjust(reports, n0, n1)
+    ALL_ORIENTATIONS.each { |(a1, d1), (a2, d2), (a3, d3)|
+      # optim? we would still find overlap without trying 11 first points
+      reports[n0].each { |x0, y0, z0|
+        reports[n1].each { |r1|
+          # for each orientation, try every pair of points from r0 & r1
+          # if we consider them as the same point, how many other points match ?
+          x1, y1, z1 = r1[a1] * d1, r1[a2] * d2, r1[a3] * d3
+          xoff, yoff, zoff = x1 + x0, y1 + y0, z1 + z0
+          # position of scanner n1 is [xoff, yoff, zoff] ( from scanner n0 pov )
+          reports_n1_adjusted = reports[n1].map { |r1|
+            [xoff - r1[a1] * d1, yoff - r1[a2] * d2, zoff - r1[a3] * d3] }
+          #
+          nboverlaps = reports_n1_adjusted.intersection(reports[n0]).length
+          next if nboverlaps < 12
+          reports[n1] = reports_n1_adjusted
+          return xoff, yoff, zoff
+        } } }
+    false
+  end
+
+  # assemble the full map
+  # -> update all reports with absolute coordinates (relative to first scanner)
+  # -> return list of coords of all scanners
+  def assemble(reports)
+    n_done, n_todo = [0], reports.each_index.drop(1)
+    n_ttry = n_done.dup  # to be tried as ref
+    sc_pos = [[0, 0, 0]] # scanner positions
+    while not n_todo.empty?
+      nref = n_ttry.shift()
+      n_todo.dup.each { |n1|
+        s1_pos = adjust(reports, nref, n1)
+        next unless s1_pos
+        n_todo.delete(n1)
+        n_ttry.push(n1)
+        n_done.push(n1)
+        sc_pos.push(s1_pos) }
+    end
+    sc_pos
+  end
+
+  # parse reports of all scanners
+  def getreports(input)
+    input.split("\n\n")
+      .map { |s| s.split("\n") }.map { |_, *lines|
+    lines.map { |l| l.split(",").map(&:to_i) } }
+  end
+
+end
+
+# 394 (took > 300s !)
+def d21191()
+  include D2119
+  reports = getreports(input(2119))
+  assemble(reports)
+  reports.flatten(1).uniq.length
+end
+
+# 12304
+def d21192()
+  include D2119
+  reports = getreports(input(2119))
+  scanpos = assemble(reports)
+  scanpos.combination(2).map { |(x1, y1, z1), (x2, y2, z2)|
+    (x2 - x1).abs + (y2 - y1).abs + (z2 - z1).abs }.max
+end
+
+
+# ###########################################################################
+#
 # 2021 DAY 18
 #
 # ###########################################################################
@@ -90,7 +176,7 @@ module D2118
   # ##################################################################
 
   # addred(lst)
-  #   returns reduced addition of given snaifish numbers in lst
+  #   returns reduced addition of given snailfish numbers in lst
   #   ( does not modify anything )
 
   def addred(lst)
