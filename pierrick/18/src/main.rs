@@ -1,3 +1,5 @@
+use itertools::*;
+
 #[derive(Clone, Copy, PartialEq)]
 struct NodeId(usize);
 
@@ -313,7 +315,27 @@ fn part1(s: &str) -> (String, usize) {
     (tree.to_string(total), tree.magnitude(total))
 }
 
+fn part2(s: &str) -> usize {
+    let mut tree = Tree::new();
+    s.lines()
+        .permutations(2)
+        .map(|lines| {
+            let a = tree.create_node_from_str(lines[0]);
+            let b = tree.create_node_from_str(lines[1]);
+            let ab = tree.add_and_reduce(a, b);
+
+            let a = tree.create_node_from_str(lines[0]);
+            let b = tree.create_node_from_str(lines[1]);
+            let ba = tree.add_and_reduce(b, a);
+            usize::max(tree.magnitude(ab), tree.magnitude(ba))
+        })
+        .max()
+        .unwrap()
+}
+
 fn main() {
     assert_eq!(4140, part1(EXAMPLE).1);
     println!("{}", part1(INPUT).1);
+    assert_eq!(3993, part2(EXAMPLE));
+    println!("{}", part2(INPUT));
 }
