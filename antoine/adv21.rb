@@ -10,6 +10,99 @@ require 'set'
 
 # ###########################################################################
 #
+# 2021 DAY 21
+#
+# ###########################################################################
+
+# 679329
+def d21211()
+  pps = input(2121).split("\n").map{ _1.split.last.to_i }
+  psc, die, n = [0, 0], 0, 0
+  loop do
+    roll = [1, 2, 3].map { (die + _1) % 100}.sum
+    die = (die + 3) % 100
+    pps[n % 2] = (((pps[n % 2] + roll) - 1) % 10) + 1
+    psc[n % 2] = psc[n % 2] + pps[n % 2]
+    n = n + 1
+    break if psc.max >= 1000
+  end
+  psc.min * n * 3
+end
+
+#
+# # total roll for player 1 at round n :
+# r1 = ( (( n * (n + 1) * 18 ) / 2 ) + (6 * (n + 1)) )
+#
+
+#
+# # position of player 1 at round n :
+# p1 = ( ( init1 + r1 - 1 ) % 10 ) + 1
+#
+
+#
+# # score of player 1 (depends on previous round)
+# s1 = s1 + p1
+#
+
+# 433315766324816 (took ~15s) ugly and slow solution
+def d21212()
+  def nextplay(play, n)
+    play.to_a
+      .product( [ [3, 1], [4, 3], [5, 6], [6, 7], [7, 6], [8, 3], [9, 1] ] )
+      .map { |( (pos1, scr1, pos2, scr2), nbu), (newrol, nbr)|
+        if n == 1
+          pos1 = ( ( ( pos1 + newrol - 1 ) % 10 ) + 1 )
+          scr1 += pos1
+        else
+          pos2 = ( ( ( pos2 + newrol - 1 ) % 10 ) + 1 )
+          scr2 += pos2
+        end
+        { [ pos1, scr1, pos2, scr2 ] => nbu * nbr } }
+      .reduce( {} ) { |acc, nh|
+        acc.merge(nh) { |_, oldv, newv| oldv + newv} }
+  end
+
+  p1, p2 = input(2121).split("\n").map{ _1.split.last.to_i }
+  play = { [ p1, 0, p2, 0 ] => 1 }
+  nb1, nb2 = 0, 0
+
+  loop do
+    play = nextplay( play, 1 )
+    play, endx = play.partition{ |(r1, s1, r2, s2), n| s1 < 21 }
+    nb1 += endx.map(&:last).sum
+
+    play = nextplay( play, 2 )
+    play, endx = play.partition{ |(r1, s1, r2, s2), n| s2 < 21 }
+    nb2 += endx.map(&:last).sum
+
+    break [nb1, nb2].max if play.empty?
+  end
+end
+
+# cleaner and faster solution
+def d2121rec()
+  p1, p2 = input(2121).split("\n").map{ _1.split.last.to_i }
+
+  @cache = { }
+  def play(p1, s1, p2, s2)
+    return [1, 0] if s1 >= 21
+    return [0, 1] if s2 >= 21
+    match = @cache.fetch([p1, s1, p2, s2], nil)
+    return match if match
+    [1, 2, 3].product([1, 2, 3], [1, 2, 3])
+      .map(&:sum).map { |roll|
+        np1 = ( ( ( p1 + roll - 1 ) % 10 ) + 1 )
+        play(p2, s2, np1, s1 + np1).reverse }
+      .transpose.map(&:sum)
+      .tap { |a1, a2| @cache[[p1, s1, p2, s2]] = [a1, a2] }
+  end
+
+  play(p1, 0, p2, 0).max
+end
+
+
+# ###########################################################################
+#
 # 2021 DAY 20
 #
 # ###########################################################################
@@ -49,6 +142,7 @@ module D2120
   end
 
   def enhloop(enh, img, nbiter, debug=false)
+    # not sure if (+3, -1) works for all enhancement lists
     img = resize(img, nbiter + 3)
     (1..nbiter).each { |n|
       img = enhance(enh, img)
