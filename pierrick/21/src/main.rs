@@ -1,4 +1,7 @@
-#[derive(Debug)]
+use itertools::*;
+use std::collections::HashMap;
+
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
 struct Player {
     position: usize,
     score: usize,
@@ -88,6 +91,43 @@ impl Game {
     }
 }
 
+type Cache = HashMap<(Player, Player), (usize, usize)>;
+
+fn play_part2(p1: Player, p2: Player, cache: &mut Cache) -> (usize, usize) {
+    if p1.score >= 21 {
+        return (1, 0);
+    }
+    if p2.score >= 21 {
+        return (0, 1);
+    }
+
+    let mut res = (0, 0);
+
+    // every roll can be 1, 2, 3
+    // and it's done 3 times
+    for (a, b, c) in iproduct!(1..4, 1..4, 1..4) {
+        let outcomes = [a, b, c];
+        let bump = outcomes.into_iter().sum();
+        let mut next = p1;
+        next.play(bump);
+        if !cache.contains_key(&(p2, next)) {
+            let val = play_part2(p2, next, cache);
+            cache.insert((p2, next), val);
+        }
+        let (win_p2, win_p1) = cache.get(&(p2, next)).unwrap();
+        res.0 += win_p1;
+        res.1 += win_p2;
+    }
+
+    res
+}
+
+fn part2(p1: Player, p2: Player) -> usize {
+    let mut cache = Cache::new();
+    let (p1_win, p2_win) = play_part2(p1, p2, &mut cache);
+    usize::max(p1_win, p2_win)
+}
+
 fn main() {
     assert_eq!(
         739785,
@@ -97,4 +137,6 @@ fn main() {
         "{}",
         Game::new(Player::new(2), Player::new(1), Dice::new()).part1()
     );
+    assert_eq!(444356092776315, part2(Player::new(4), Player::new(8)));
+    println!("{}", part2(Player::new(2), Player::new(1)));
 }
