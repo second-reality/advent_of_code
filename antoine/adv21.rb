@@ -10,6 +10,97 @@ require 'set'
 
 # ###########################################################################
 #
+# 2021 DAY 22
+#
+# ###########################################################################
+
+# 587785
+def d21221()
+  input(2122).split("\n")
+    .map { |line| line.scan(/(?:on|off|[-0-9]+)/) }
+    .map { |sw, *ps| [sw] + ps.map(&:to_i) }
+    .filter { |_, *ps| ps.all? { |c| c.between?(-50, 50) } }
+    .tap { |steps| debug("nbsteps", steps.length) }
+    .reduce(Set[]) { |acc, (sw, x1, x2, y1, y2, z1, z2)|
+      newset = (x1..x2).to_a.product((y1..y2).to_a, (z1..z2).to_a).to_set
+      acc = (sw == "on") ? (acc | newset) : (acc - newset)
+      debug("len", acc.length)
+      acc
+    }
+    .size
+end
+
+# ["on x=0..9,y=0..9,z=0..9",
+#  "on x=4..6,y=4..6,z=4..6"]
+
+#  x1 x2 y1 y2 z1 z2
+# [ 0, 9, 0, 9, 0, 9 ] break [ 4, 6, 4, 6, 4, 6 ]
+
+# 9 A A A A D D D B B B
+# 8 A A A A D D D B B B
+# 7 A A A A D D D B B B
+# 6 A A A A . . . B B B
+# 5 A A A A . . . B B B
+# 4 A A A A . . . B B B
+# 3 A A A A C C C B B B
+# 2 A A A A C C C B B B
+# 1 A A A A C C C B B B
+# 0 A A A A C C C B B B
+# / 0 1 2 3 4 5 6 7 8 9
+
+#y4-6z7-9   A F F F B
+#y4-6z4-6  A . . . B
+#y4-6z0-3 A E E E B
+
+# [ 0, 3, 0, 9, 0, 9 ] A lowx  (front)
+# [ 7, 9, 0, 9, 0, 9 ] B highx (back)
+# [ 4, 6, 0, 3, 0, 9 ] C lowy  (below)
+# [ 4, 6, 7, 9, 0, 9 ] D highy (above)
+# [ 4, 6, 4, 6, 0, 3 ] E lowz  (lowdeep)
+# [ 4, 6, 4, 6, 7, 9 ] F highz (hghdeep)
+
+# 1167985679908143
+def d21222()
+  input(2122).split("\n")
+    .map { |line| line.scan(/(?:on|off|[-0-9]+)/) }
+    .map { |sw, *ps| [sw] + ps.map(&:to_i) }
+    # .filter { |_, *ps| ps.all? { |c| c.between?(-50, 50) } }
+    .tap { |steps| debug("nbsteps", steps.length) }
+    .reduce([]) { |acc, (sw, nx1, nx2, ny1, ny2, nz1, nz2)|
+      # maintain the list of non-overlapping "on" cubes
+      newcubes =
+        acc.map { |(ox1, ox2, oy1, oy2, oz1, oz2)|
+        if ( nx1 > ox2 or nx2 < ox1 or
+             ny1 > oy2 or ny2 < oy1 or
+             nz1 > oz2 or nz2 < oz1 )
+          # old cube does not overlap -> keep it unchanged
+          [[ox1, ox2, oy1, oy2, oz1, oz2]]
+        else
+          # old cube overlaps -> lets do the breaking
+          gx1, sx2 = [ox1, nx1].max, [ox2, nx2].min
+          gy1, sy2 = [oy1, ny1].max, [oy2, ny2].min
+          [
+            (nx1 > ox1) ? [ox1  , nx1-1, oy1  , oy2  , oz1  , oz2  ] : nil,
+            (nx2 < ox2) ? [nx2+1, ox2  , oy1  , oy2  , oz1  , oz2  ] : nil,
+            (ny1 > oy1) ? [gx1  , sx2  , oy1  , ny1-1, oz1  , oz2  ] : nil,
+            (ny2 < oy2) ? [gx1  , sx2  , ny2+1, oy2  , oz1  , oz2  ] : nil,
+            (nz1 > oz1) ? [gx1  , sx2  , gy1  , sy2  , oz1  , nz1-1] : nil,
+            (nz2 < oz2) ? [gx1  , sx2  , gy1  , sy2  , nz2+1, oz2  ] : nil,
+          ].compact
+        end
+        }.flatten(1)
+      # add the new cube (now non-overlapping) if it is "on"
+      newcubes.push([nx1, nx2, ny1, ny2, nz1, nz2]) if sw == "on"
+      newcubes
+    }
+    .map { |(x1, x2, y1, y2, z1, z2)|
+      (x2 - x1 + 1) * (y2 - y1 + 1) * (z2 - z1 + 1)
+    }.sum
+end
+
+
+# ###########################################################################
+#
 # 2021 DAY 21
 #
 # ###########################################################################
