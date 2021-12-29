@@ -10,6 +10,87 @@ require 'set'
 
 # ###########################################################################
 #
+# 2021 DAY 23
+#
+# ###########################################################################
+
+# input            example
+# #############    #############
+# #...........#    #...........#
+# ###B#A#B#C###    ###B#C#B#D###
+#   #D#A#D#C#        #A#D#C#A#
+#   #########        #########
+
+module D2123
+  HALLWAY = [[1, 1], [2, 1], [4, 1], [6, 1], [8, 1], [10, 1], [11, 1]]
+
+  def finalpos(pods, ((x, y), t))
+    return false if (x != {"A" => 3, "B" => 5, "C" => 7, "D" => 9}[t])
+    return ((y + 1)..@@ymax).all? { |yr| pods[[x, yr]] == t }
+  end
+
+  def pathcost(pods, t, (x1, y1), (x2, y2))
+    ( (1...y1) .step( 1)               .map { |y| [x1, y] } +
+      (x2...x1).step(x2 <= x1 ? 1 : -1).map { |x| [x , 1] } +
+      (y2...1) .step(-1)               .map { |y| [x2, y] } )
+      .each { |(x, y)| break nil if pods.key?([x, y]) }
+      .then { |p|
+      ( { "A" => 1, "B" => 10, "C" => 100, "D" => 1000 }[t] *
+        p.length) if not p.nil? }
+  end
+
+  def possible_moves(pods, ((x, y), t))
+    return [] if finalpos(pods, [[x, y], t])
+    dx = {"A" => 3, "B" => 5, "C" => 7, "D" => 9}[t]
+    ( ( ( y != 1 ) ? HALLWAY : [] ) +
+      (@@ymax..2).step(-1).find { |y| pods[[dx, y]] != t }.then {|y| [[dx, y]] }
+    ).map { |(xh, yh)|
+      cost = pathcost(pods, t, [x, y], [xh, yh])
+      [ [xh, yh], cost ] if cost
+    }.compact
+  end
+
+  def tryall(pods, energy=0)
+    @@ymax  ||= pods.keys.map(&:last).max
+    @@cache ||= {} # pods -> energy
+
+    match = @@cache.fetch(pods, nil)
+    return nil if match and match <= energy
+    @@cache[pods] = energy
+
+    return energy if pods.all? { |pod| finalpos(pods, pod) }
+
+    allmoves = pods.map { |pod|
+      possible_moves(pods, pod).map { |mov| [pod, mov] }  }.flatten(1)
+
+    allmoves.map { |((x1, y1), t), ((x2, y2), en)|
+      newpods = pods.except( [x1, y1] ).update({ [x2, y2] => t })
+      tryall(newpods, energy + en)
+    }.compact.min
+  end
+end
+
+# 16506 (took ~50s)
+def d21231()
+  include D2123
+  pods = { [3, 2] => "B", [5, 2] => "A", [7, 2] => "B", [9, 2] => "C",
+           [3, 3] => "D", [5, 3] => "A", [7, 3] => "D", [9, 3] => "C" }
+  tryall(pods)
+end
+
+# 48304 (took ~200s)
+def d21232()
+  include D2123
+  pods = { [3, 2] => "B", [5, 2] => "A", [7, 2] => "B", [9, 2] => "C",
+           [3, 3] => "D", [5, 3] => "C", [7, 3] => "B", [9, 3] => "A",
+           [3, 4] => "D", [5, 4] => "B", [7, 4] => "A", [9, 4] => "C",
+           [3, 5] => "D", [5, 5] => "A", [7, 5] => "D", [9, 5] => "C" }
+  tryall(pods)
+end
+
+
+# ###########################################################################
+#
 # 2021 DAY 22
 #
 # ###########################################################################
