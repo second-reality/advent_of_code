@@ -4,7 +4,7 @@ type Grids = Vec<Grid>;
 fn main() {
     let input = include_str!("../input");
     let (drawn_numbers, mut grids) = parse_input(input);
-    
+
     let mut i = 0;
     while !someone_win(&grids) {
         update_grids(&mut grids, drawn_numbers[i]);
@@ -12,7 +12,23 @@ fn main() {
     }
 
     let last_drawn_number = drawn_numbers[i-1];
-    println!("{}", get_score_of_winner(grids, last_drawn_number));
+    println!("{}", get_score_of_winner(&grids, last_drawn_number));
+
+    // Part 2
+    while grids.iter().map(|grid| if wins(grid) { 0 } else { 1 })
+                       .sum::<i32>() != 1 {
+        update_grids(&mut grids, drawn_numbers[i]);
+        i += 1;
+    }
+
+    let mut last_grid = get_last_winner(&grids);
+    while !wins(&last_grid) {
+        update_grid(&mut last_grid, drawn_numbers[i]);
+        i += 1;
+    }
+
+    let last_drawn_number = drawn_numbers[i-1];
+    println!("{}", score(&last_grid, last_drawn_number));
 }
 
 fn parse_input(input: &'static str) -> (Vec<i32>, Grids) {
@@ -41,20 +57,29 @@ fn parse_input(input: &'static str) -> (Vec<i32>, Grids) {
 
 fn someone_win(grids: &Grids) -> bool {
     for grid in grids {
-        if wins(&grid) { 
-            return true; 
+        if wins(&grid) {
+            return true;
         }
     }
     return false;
 }
 
+fn get_last_winner(grids: &Grids) -> Grid {
+    for grid in grids {
+        if !wins(&grid) {
+            return grid.clone();
+        }
+    }
+    panic!("shouldn't be here");
+}
+
 fn wins(grid: &Grid) -> bool {
     let mut victory = true;
-    
+
     // check rows
     for row in grid {
         for cell in row {
-            victory = victory && cell.1;            
+            victory = victory && cell.1;
         }
         if victory {
             return true;
@@ -62,7 +87,7 @@ fn wins(grid: &Grid) -> bool {
         victory = true;
     }
 
-    // check cols 
+    // check cols
     for j in 0..grid[0].len() {
         for i in 0..grid.len() {
             victory = grid[i][j].1 && victory;
@@ -93,10 +118,10 @@ fn update_grid(grid: &mut Grid, drawn_number: i32) {
     }
 }
 
-fn get_score_of_winner(grids: Grids, last_drawn_number: i32) -> i32 {
+fn get_score_of_winner(grids: &Grids, last_drawn_number: i32) -> i32 {
     for grid in grids {
-        if wins(&grid) { 
-            return score(&grid, last_drawn_number); 
+        if wins(&grid) {
+            return score(&grid, last_drawn_number);
         }
     }
     return -1;
