@@ -10,6 +10,400 @@ require 'set'
 
 # ###########################################################################
 #
+# 2021 DAY 25
+#
+# ###########################################################################
+
+# v...>>.vv>
+# .vv>>.vv..
+# >>.>v>...v
+# >>v>>.>.v.
+# v>v.vv.v..
+# >.>>..v...
+# .vv..>.>v.
+# v.v..>>v.v
+# ....v..v.>
+
+# 412
+def d21251()
+  lines = input(2125).split("\n")
+  ymax, xmax = lines.length, lines.first.length
+  east, south =
+    lines.each_with_index.map { |l, y|
+      l.chars.each_with_index.map { |c, x| [c, x, y] if (c != ".") }
+    }.flatten(1).compact.partition { |k, _, _| k == ">"
+    }.then { |ls|  ls.map { |l| l.map { |x| x.drop(1) }.to_set } }
+
+  def step(east, south, xmax, ymax)
+    e_bk, e_ok = east.partition { |x, y|
+      nx, ny = (x + 1) % xmax, y
+      east.include?([nx, ny]) or south.include?([nx, ny]) }
+    e_ok.map! { |x, y| [(x + 1) % xmax, y] }
+    east.replace(e_ok + e_bk)
+
+    s_bk, s_ok = south.partition { |x, y|
+      nx, ny = x, (y + 1) % ymax
+      east.include?([nx, ny]) or south.include?([nx, ny]) }
+    s_ok.map! { |x, y| [x, (y + 1) % ymax] }
+    south.replace(s_ok + s_bk)
+  end
+
+  (1..).find {
+    oeast, osouth = east.to_a.to_set, south.to_a.to_set
+    step( east, south, xmax, ymax )
+    ( oeast == east and osouth == south )
+  }
+end
+
+
+# ###########################################################################
+#
+# 2021 DAY 24
+#
+# ###########################################################################
+
+def d21240(arg)
+  prog = input(2124).split("\n").map(&:split)
+
+  def runprog(prog, input)
+    vars = { "w" => 0, "x" => 0, "y" => 0, "z" => 0 }
+    opv = lambda { |x| (vars[x] || x.to_i) }
+    for code, num in prog.each_with_index
+      debug(vars.map { |n, v| "%s=%10d " % [n, v] }.join)
+      debug("%3d - %s" % [num, code])
+      case code
+      in ["inp", a]    then vars[a] = input.shift || break
+      in ["add", a, b] then vars[a] = opv.(a) + opv.(b)
+      in ["mul", a, b] then vars[a] = opv.(a) * opv.(b)
+      in ["div", a, b] then vars[a] = opv.(a) / opv.(b)
+      in ["mod", a, b] then vars[a] = opv.(a) % opv.(b)
+      in ["eql", a, b] then vars[a] = (opv.(a) == opv.(b)) ? 1 : 0
+      end
+    end
+    debug(vars.map { |n, v| "%s=%10d " % [n, v] }.join)
+    vars
+  end
+
+  input  = arg.chars.map(&:to_i)
+  result = runprog(prog, input)
+  result["z"]
+end
+
+#  W1         W2         W3         W4         W5         W6         W7
+#  inp w      inp w      inp w      inp w      inp w      inp w      inp w
+#  mul x 0    mul x 0    mul x 0    mul x 0    mul x 0    mul x 0    mul x 0
+#  add x z    add x z    add x z    add x z    add x z    add x z    add x z
+#  mod x 26   mod x 26   mod x 26   mod x 26   mod x 26   mod x 26   mod x 26
+#  div z 1 #  div z 1    div z 1    div z 26   div z 1    div z 1    div z 26
+#  add x 12#  add x 11   add x 14   add x -6   add x 15   add x 12   add x -9
+#  eql x w    eql x w    eql x w    eql x w    eql x w    eql x w    eql x w
+#  eql x 0    eql x 0    eql x 0    eql x 0    eql x 0    eql x 0    eql x 0
+#  mul y 0    mul y 0    mul y 0    mul y 0    mul y 0    mul y 0    mul y 0
+#  add y 25   add y 25   add y 25   add y 25   add y 25   add y 25   add y 25
+#  mul y x    mul y x    mul y x    mul y x    mul y x    mul y x    mul y x
+#  add y 1    add y 1    add y 1    add y 1    add y 1    add y 1    add y 1
+#  mul z y    mul z y    mul z y    mul z y    mul z y    mul z y    mul z y
+#  mul y 0    mul y 0    mul y 0    mul y 0    mul y 0    mul y 0    mul y 0
+#  add y w    add y w    add y w    add y w    add y w    add y w    add y w
+#  add y 4 #  add y 10   add y 12   add y 14   add y 6    add y 16   add y 1
+#  mul y x    mul y x    mul y x    mul y x    mul y x    mul y x    mul y x
+#  add z y    add z y    add z y    add z y    add z y    add z y    add z y
+
+#  W8         W9         W10        W11        W12        W13        W14
+#  inp w      inp w      inp w      inp w      inp w      inp w      inp w
+#  mul x 0    mul x 0    mul x 0    mul x 0    mul x 0    mul x 0    mul x 0
+#  add x z    add x z    add x z    add x z    add x z    add x z    add x z
+#  mod x 26   mod x 26   mod x 26   mod x 26   mod x 26   mod x 26   mod x 2
+#  div z 1    div z 1    div z 26   div z 26   div z 26   div z 26   div z 2
+#  add x 14   add x 14   add x -5   add x -9   add x -5   add x -2   add x -
+#  eql x w    eql x w    eql x w    eql x w    eql x w    eql x w    eql x w
+#  eql x 0    eql x 0    eql x 0    eql x 0    eql x 0    eql x 0    eql x 0
+#  mul y 0    mul y 0    mul y 0    mul y 0    mul y 0    mul y 0    mul y 0
+#  add y 25   add y 25   add y 25   add y 25   add y 25   add y 25   add y 2
+#  mul y x    mul y x    mul y x    mul y x    mul y x    mul y x    mul y x
+#  add y 1    add y 1    add y 1    add y 1    add y 1    add y 1    add y 1
+#  mul z y    mul z y    mul z y    mul z y    mul z y    mul z y    mul z y
+#  mul y 0    mul y 0    mul y 0    mul y 0    mul y 0    mul y 0    mul y 0
+#  add y w    add y w    add y w    add y w    add y w    add y w    add y w
+#  add y 7    add y 8    add y 11   add y 8    add y 3    add y 1    add y 8
+#  mul y x    mul y x    mul y x    mul y x    mul y x    mul y x    mul y x
+#  add z y    add z y    add z y    add z y    add z y    add z y    add z y
+
+#   1 - inp   w      ### W = INPUT
+#   2 - mul   x   0                          #  X = 0
+#   3 - add   x   z                          #  X = X + Z
+#   4 - mod   x  26   #  X = Z % 26
+#   5 - div   z   1  ### Z = Z / 1
+#   6 - add   x  12                         ### X = X + 12
+#   7 - eql   x   w                          #  X = ( X == W ) ? 1 : 0
+#   8 - eql   x   0                          #  X = ( X == 0 ) ? 1 : 0
+#                    ### X = ( ( X + 12 ) != W )
+#   9 - mul   y   0                          #  Y = 0
+#  10 - add   y  25                          #  Y = Y + 25
+#  11 - mul   y   x                          #  Y = Y * X
+#  12 - add   y   1                          #  Y = Y + 1
+#  13 - mul   z   y                          #  Z = Z * Y
+#                     #  Z = Z * ( 25 * X ) + 1
+#  14 - mul   y   0                          #  Y = 0
+#  15 - add   y   w                          #  Y = Y + W
+#  16 - add   y   4                         ### Y = Y + 4
+#                    ### Y = W + 4
+#  17 - mul   y   x   #  Y = Y * X
+#  18 - add   z   y   #  Z = Z + Y
+
+#  W = INPUT
+#
+#  X = ( ( (Z_ % 26) * 12 ) != W )
+#                      ^
+#  Z = ( ( Z_ / 1 ) * ( ( 25 * X ) + 1 ) ) + ( ( W + 4 ) * X )
+#               ^                                    ^
+
+# V1 = 12 11 14 -6 15 12 -9 14 14 -5 -9 -5 -2 -7
+# V2 =  1  1  1 26  1  1 26  1  1 26 26 26 26 26
+# V3 =  4 10 12 14  6 16  1  7  8 11  8  3  1  8
+
+# #  X1  = ( (   0        + 12 ) != W1  )
+# #  X2  = ( ( (Z1  % 26) + 11 ) != W2  )
+# #  X3  = ( ( (Z2  % 26) + 14 ) != W3  )
+# #  X4  = ( ( (Z3  % 26) + -6 ) != W4  )
+# #  X5  = ( ( (Z4  % 26) + 15 ) != W5  )
+# #  X6  = ( ( (Z5  % 26) + 12 ) != W6  )
+# #  X7  = ( ( (Z6  % 26) + -9 ) != W7  )
+# #  X8  = ( ( (Z7  % 26) + 14 ) != W8  )
+# #  X9  = ( ( (Z8  % 26) + 14 ) != W9  )
+# #  X10 = ( ( (Z9  % 26) + -5 ) != W10 )
+# #  X11 = ( ( (Z10 % 26) + -9 ) != W11 )
+# #  X12 = ( ( (Z11 % 26) + -5 ) != W12 )
+# #  X13 = ( ( (Z12 % 26) + -2 ) != W13 )
+# #  X14 = ( ( (Z13 % 26) + -7 ) != W14 )
+
+# #  Z1  = ( ( Z0  / 1 ) * ( ( 25 * X1  ) + 1 ) ) + ( ( W1  + 4 ) * X1  )
+# #  Z2  = ( ( Z1  / 1 ) * ( ( 25 * X2  ) + 1 ) ) + ( ( W2  + 10) * X2  )
+# #  Z3  = ( ( Z2  / 1 ) * ( ( 25 * X3  ) + 1 ) ) + ( ( W3  + 12) * X3  )
+# #  Z4  = ( ( Z3  / 26) * ( ( 25 * X4  ) + 1 ) ) + ( ( W4  + 14) * X4  )
+# #  Z5  = ( ( Z4  / 1 ) * ( ( 25 * X5  ) + 1 ) ) + ( ( W5  + 6 ) * X5  )
+# #  Z6  = ( ( Z5  / 1 ) * ( ( 25 * X6  ) + 1 ) ) + ( ( W6  + 16) * X6  )
+# #  Z7  = ( ( Z6  / 26) * ( ( 25 * X7  ) + 1 ) ) + ( ( W7  + 1 ) * X7  )
+# #  Z8  = ( ( Z7  / 1 ) * ( ( 25 * X8  ) + 1 ) ) + ( ( W8  + 7 ) * X8  )
+# #  Z9  = ( ( Z8  / 1 ) * ( ( 25 * X9  ) + 1 ) ) + ( ( W9  + 8 ) * X9  )
+# #  Z10 = ( ( Z9  / 26) * ( ( 25 * X10 ) + 1 ) ) + ( ( W10 + 11) * X10 )
+# #  Z11 = ( ( Z10 / 26) * ( ( 25 * X11 ) + 1 ) ) + ( ( W11 + 8 ) * X11 )
+# #  Z12 = ( ( Z11 / 26) * ( ( 25 * X12 ) + 1 ) ) + ( ( W12 + 3 ) * X12 )
+# #  Z13 = ( ( Z12 / 26) * ( ( 25 * X13 ) + 1 ) ) + ( ( W13 + 1 ) * X13 )
+# #  Z14 = ( ( Z13 / 26) * ( ( 25 * X14 ) + 1 ) ) + ( ( W14 + 8 ) * X14 )
+
+# X1  = 1
+# X2  = 1
+# X3  = 1
+# X4  = ( (Z3  % 26) + -6 ) != W4
+# X5  = 1
+# X6  = 1
+# X7  = ( (Z6  % 26) + -9 ) != W7
+# X8  = 1
+# X9  = 1
+# X10 = ( (Z9  % 26) + -5 ) != W10
+# X11 = ( (Z10 % 26) + -9 ) != W11
+# X12 = ( (Z11 % 26) + -5 ) != W12
+# X13 = ( (Z12 % 26) + -2 ) != W13
+# X14 = ( (Z13 % 26) + -7 ) != W14
+
+#  Z1  =                                       ( W1  + 4 )
+#  Z2  =                (   Z1        * 26 ) + ( W2  + 10)
+#  Z3  =                (   Z2        * 26 ) + ( W3  + 12)
+#  Z4  = (X4  == 1)   ? ( ( Z3  / 26) * 26 ) + ( W4  + 14)   : (Z3  / 26)
+#  Z5  =                (   Z4        * 26 ) + ( W5  + 6 )
+#  Z6  =                (   Z5        * 26 ) + ( W6  + 16)
+#  Z7  = (X7  == 1)   ? ( ( Z6  / 26) * 26 ) + ( W7  + 1 )   : (Z6  / 26)
+#  Z8  =                (   Z7        * 26 ) + ( W8  + 7 )
+#  Z9  =                (   Z8        * 26 ) + ( W9  + 8 )
+#  Z10 = (X10 == 1)   ? ( ( Z9  / 26) * 26 ) + ( W10 + 11)   : (Z9  / 26)
+#  Z11 = (X11 == 1)   ? ( ( Z10 / 26) * 26 ) + ( W11 + 8 )   : (Z10 / 26)
+#  Z12 = (X12 == 1)   ? ( ( Z11 / 26) * 26 ) + ( W12 + 3 )   : (Z11 / 26)
+#  Z13 = (X13 == 1)   ? ( ( Z12 / 26) * 26 ) + ( W13 + 1 )   : (Z12 / 26)
+#  Z14 = (X14 == 1)   ? ( ( Z13 / 26) * 26 ) + ( W14 + 8 )   : (Z13 / 26)
+
+def d2124x(arg)
+  w  = arg.chars.map(&:to_i).unshift(nil)
+  z1  =                                     (w[1] +  4)
+  z2  =                ( z1        * 26) + (w[2] + 10)
+  z3  =                ( z2        * 26) + (w[3] + 12)
+  x4  = (((z3  % 26) - 6) != w[4] ) ? 1 : 0
+  z4  = (x4  == 1)   ? ((z3  / 26) * 26) + (w[4] + 14)   : (z3  / 26)
+  z5  =                ( z4        * 26) + (w[5] +  6)
+  z6  =                ( z5        * 26) + (w[6] + 16)
+  x7  = (((z6  % 26) - 9) != w[7] ) ? 1 : 0
+  z7  = (x7  == 1)   ? ((z6  / 26) * 26) + (w[7] +  1)   : (z6  / 26)
+  z8  =                ( z7        * 26) + (w[8] +  7)
+  z9  =                ( z8        * 26) + (w[9] +  8)
+  x10 = (((z9  % 26) - 5) != w[10]) ? 1 : 0
+  z10 = (x10 == 1)   ? ((z9  / 26) * 26) + (w[10] +11)   : (z9  / 26)
+  x11 = (((z10 % 26) - 9) != w[11]) ? 1 : 0
+  z11 = (x11 == 1)   ? ((z10 / 26) * 26) + (w[11] + 8)   : (z10 / 26)
+  x12 = (((z11 % 26) - 5) != w[12]) ? 1 : 0
+  z12 = (x12 == 1)   ? ((z11 / 26) * 26) + (w[12] + 3)   : (z11 / 26)
+  x13 = (((z12 % 26) - 2) != w[13]) ? 1 : 0
+  z13 = (x13 == 1)   ? ((z12 / 26) * 26) + (w[13] + 1)   : (z12 / 26)
+  x14 = (((z13 % 26) - 7) != w[14]) ? 1 : 0
+  z14 = (x14 == 1)   ? ((z13 / 26) * 26) + (w[14] + 8)   : (z13 / 26)
+  z14
+end
+
+# 91398299697996
+def d21241()
+  for w1 in (9..1).step(-1) do
+    z1  = (w1 +  4)
+  for w2 in (9..1).step(-1) do
+    z2  = ( z1        * 26) + (w2 + 10)
+  for w3 in (9..1).step(-1) do
+    z3  = ( z2        * 26) + (w3 + 12)
+  for w4 in (9..1).step(-1) do
+    x4  = (((z3  % 26) - 6) != w4 ) ? 1 : 0
+    next if x4 != 0
+    z4  = (x4  == 1)   ? ((z3  / 26) * 26) + (w4 + 14)   : (z3  / 26)
+  for w5 in (9..1).step(-1) do
+    z5  = ( z4        * 26) + (w5 +  6)
+  for w6 in (9..1).step(-1) do
+    z6  = ( z5        * 26) + (w6 + 16)
+  for w7 in (9..1).step(-1) do
+    x7  = (((z6  % 26) - 9) != w7 ) ? 1 : 0
+    next if x7 != 0
+    z7  = (x7  == 1)   ? ((z6  / 26) * 26) + (w7 +  1)   : (z6  / 26)
+  for w8 in (9..1).step(-1) do
+    z8  = ( z7        * 26) + (w8 +  7)
+  for w9 in (9..1).step(-1) do
+    z9  = ( z8        * 26) + (w9 +  8)
+  for w10 in (9..1).step(-1) do
+    x10 = (((z9  % 26) - 5) != w10) ? 1 : 0
+    next if x10 != 0
+    z10 = (x10 == 1)   ? ((z9  / 26) * 26) + (w10 +11)   : (z9  / 26)
+  for w11 in (9..1).step(-1) do
+    x11 = (((z10 % 26) - 9) != w11) ? 1 : 0
+    next if x11 != 0
+    z11 = (x11 == 1)   ? ((z10 / 26) * 26) + (w11 + 8)   : (z10 / 26)
+  for w12 in (9..1).step(-1) do
+    x12 = (((z11 % 26) - 5) != w12) ? 1 : 0
+    next if x12 != 0
+    z12 = (x12 == 1)   ? ((z11 / 26) * 26) + (w12 + 3)   : (z11 / 26)
+  for w13 in (9..1).step(-1) do
+    x13 = (((z12 % 26) - 2) != w13) ? 1 : 0
+    next if x13 != 0
+    z13 = (x13 == 1)   ? ((z12 / 26) * 26) + (w13 + 1)   : (z12 / 26)
+  for w14 in (9..1).step(-1) do
+    x14 = (((z13 % 26) - 7) != w14) ? 1 : 0
+    next if x14 != 0
+    z14 = (x14 == 1)   ? ((z13 / 26) * 26) + (w14 + 8)   : (z13 / 26)
+    return [w1, w2, w3, w4, w5, w6, w7, w8, w9, w10, w11, w12, w13, w14
+           ] if z14 == 0
+  end end end end end end end end end end end end end end
+  # [9, 1, 3, 9, 8, 2, 9, 9, 6, 9, 7, 9, 9, 6]
+end
+
+# 41171183141291
+def d21242()
+  for w1 in (1..9) do
+    z1  = (w1 +  4)
+  for w2 in (1..9) do
+    z2  = ( z1        * 26) + (w2 + 10)
+  for w3 in (1..9) do
+    z3  = ( z2        * 26) + (w3 + 12)
+  for w4 in (1..9) do
+    x4  = (((z3  % 26) - 6) != w4 ) ? 1 : 0
+    next if x4 != 0
+    z4  = (x4  == 1)   ? ((z3  / 26) * 26) + (w4 + 14)   : (z3  / 26)
+  for w5 in (1..9) do
+    z5  = ( z4        * 26) + (w5 +  6)
+  for w6 in (1..9) do
+    z6  = ( z5        * 26) + (w6 + 16)
+  for w7 in (1..9) do
+    x7  = (((z6  % 26) - 9) != w7 ) ? 1 : 0
+    next if x7 != 0
+    z7  = (x7  == 1)   ? ((z6  / 26) * 26) + (w7 +  1)   : (z6  / 26)
+  for w8 in (1..9) do
+    z8  = ( z7        * 26) + (w8 +  7)
+  for w9 in (1..9) do
+    z9  = ( z8        * 26) + (w9 +  8)
+  for w10 in (1..9) do
+    x10 = (((z9  % 26) - 5) != w10) ? 1 : 0
+    next if x10 != 0
+    z10 = (x10 == 1)   ? ((z9  / 26) * 26) + (w10 +11)   : (z9  / 26)
+  for w11 in (1..9) do
+    x11 = (((z10 % 26) - 9) != w11) ? 1 : 0
+    next if x11 != 0
+    z11 = (x11 == 1)   ? ((z10 / 26) * 26) + (w11 + 8)   : (z10 / 26)
+  for w12 in (1..9) do
+    x12 = (((z11 % 26) - 5) != w12) ? 1 : 0
+    next if x12 != 0
+    z12 = (x12 == 1)   ? ((z11 / 26) * 26) + (w12 + 3)   : (z11 / 26)
+  for w13 in (1..9) do
+    x13 = (((z12 % 26) - 2) != w13) ? 1 : 0
+    next if x13 != 0
+    z13 = (x13 == 1)   ? ((z12 / 26) * 26) + (w13 + 1)   : (z12 / 26)
+  for w14 in (1..9) do
+    x14 = (((z13 % 26) - 7) != w14) ? 1 : 0
+    next if x14 != 0
+    z14 = (x14 == 1)   ? ((z13 / 26) * 26) + (w14 + 8)   : (z13 / 26)
+    return [w1, w2, w3, w4, w5, w6, w7, w8, w9, w10, w11, w12, w13, w14
+           ] if z14 == 0
+  end end end end end end end end end end end end end end
+  # [4, 1, 1, 7, 1, 1, 8, 3, 1, 4, 1, 2, 9, 1]
+end
+
+# XXXXXXXXXXXXXXXXXXXXXXX
+#
+# ALGO MEANING FOUND AFTERWARDS ON REDDIT
+#   (looks very similar to synacor challenge)
+
+#     PUSH[W1 + 4 ]
+#     PUSH[W2 + 10]
+#     PUSH[W3 + 12]
+#                  OR  POP[XXXX]  IF W4 == XXXX-6   # X4 ==0
+#     PUSH[W5 + 6 ]
+#     PUSH[W6 + 16]
+#                  OR  POP[XXXX]  IF W7 == XXXX-9   # X7 ==0
+#     PUSH[W8 + 7 ]
+#     PUSH[W9 + 8 ]
+#                  OR  POP[XXXX]  IF W10== XXXX-5   # X10==0
+#                  OR  POP[XXXX]  IF W11== XXXX-9   # X11==0
+#                  OR  POP[XXXX]  IF W12== XXXX-5   # X12==0
+#                  OR  POP[XXXX]  IF W13== XXXX-2   # X13==0
+#                  OR  POP[XXXX]  IF W14== XXXX-7   # X14==0
+
+#  > PUSH W1 + 4
+#      > PUSH W2 + 10
+#          > PUSH W3 + 12
+#          < POP IF W4 == W3 + 12 -6
+#          > PUSH W5 + 6
+#              > PUSH W6 + 16
+#              < POP IF W7 == W6 + 16 -9
+#              > PUSH W8 + 7
+#                  > PUSH W9 + 8
+#                  < POP IF W10== W9 + 8 -5
+#              < POP IF W11== W8 + 7 -9
+#          < POP IF W12== W5 + 6 -5
+#      < POP IF W13== W2 + 10 -2
+#  < POP IF W14== W1 + 4 -7
+
+#  < W4  == W3 + 6
+#  < W7  == W6 + 7
+#  < W10 == W9 + 3
+#  < W11 == W8 - 2
+#  < W12 == W5 + 1
+#  < W13 == W2 + 8
+#  < W14 == W1 - 3
+
+#  W1  W2  W3  W4  W5  W6  W7  W8  W9  W10  W11  W12  W13  W14
+#             W3+6        W6+7        W9+3 W8-2 W5+1 W2+8 W1-3
+#  9   1   3   9   8   2   9   9   6   9    7    9    9    6
+#  >>> PART1 91398299697996
+
+#  W1  W2  W3  W4  W5  W6  W7  W8  W9  W10  W11  W12  W13  W14
+#             W3+6        W6+7        W9+3 W8-2 W5+1 W2+8 W1-3
+#  4   1   1   7   1   1   8    3   1   4   1    2    9     1
+#  >>> PART2 41171183141291
+
+
+# ###########################################################################
+#
 # 2021 DAY 23
 #
 # ###########################################################################
