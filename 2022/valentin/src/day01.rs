@@ -26,10 +26,5 @@ pub fn part2(input: String) -> usize {
     total_calories.into_iter().take(3).sum()
 }
 
-pub fn test1(example: String) {
-    assert_eq!(part1(example), 24000);
-}
-
-pub fn test2(example: String) {
-    assert_eq!(part2(example), 45000);
-}
+pub const EXPECTED1: usize = 24_000;
+pub const EXPECTED2: usize = 45_000;

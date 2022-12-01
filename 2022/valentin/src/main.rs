@@ -1,16 +1,55 @@
 use std::env;
 use std::fs;
 use std::time::Instant;
-use val2022aoc::{get_day, PartImplem};
+use val2022aoc::{expected_output_day, get_solution_day, PartSolution};
 
-fn time_part(part_func: PartImplem, input: String, day: u32, part: u8) {
+const NO_COLOR: &str = "\x1b[0m";
+const RED: &str = "\x1b[0;31m";
+const GREEN: &str = "\x1b[0;32m";
+const BLUE: &str = "\x1b[0;34m";
+const PURPLE: &str = "\x1b[0;35m";
+const HIGH_YELLOW: &str = "\x1b[0;93m";
+
+fn log_str(day: u32, part: u8) -> String {
+    format!("{}Day {}, Part {}{}", BLUE, day, part, NO_COLOR)
+}
+
+fn time_part(part_func: PartSolution, input: String, day: u32, part: u8) {
     let start = Instant::now();
     let output = part_func(input);
     let duration = start.elapsed();
     println!(
-        "Day {}, Part {} answer = {}, took {:?}",
-        day, part, output, duration
+        "{} answer = {}{}{}, took {}{:?}{}",
+        log_str(day, part),
+        HIGH_YELLOW,
+        output,
+        NO_COLOR,
+        PURPLE,
+        duration,
+        NO_COLOR
     );
+}
+
+fn safe_check(part_func: PartSolution, example: String, expected: usize, day: u32, part: u8) {
+    let output = part_func(example);
+    if output != expected {
+        println!(
+            "{} {}Safe check failed (get {}, expected {}){}",
+            log_str(day, part),
+            RED,
+            output,
+            expected,
+            NO_COLOR
+        );
+        panic!("Invalid code");
+    } else {
+        println!(
+            "{} {}Safe check passed!{}",
+            log_str(day, part),
+            GREEN,
+            NO_COLOR
+        );
+    }
 }
 
 fn get_string_from(day: u32, is_example: bool) -> String {
@@ -27,27 +66,20 @@ fn get_string_from(day: u32, is_example: bool) -> String {
 }
 
 fn exec_and_time_day(day: u32) {
-    // catch the code to test and run
-    let ((part1, test1), (part2, test2)) = get_day(day);
-
-    // get example
+    // get example and input
     let example = get_string_from(day, true);
-
-    // get input
     let input = get_string_from(day, false);
 
-    // testing part 1
-    test1(example.clone());
-    println!("Day {}, Part 1 test passed !", day);
+    // catch the code to test and their expected values
+    let (part1, part2) = get_solution_day(day);
+    let (expected1, expected2) = expected_output_day(day);
 
-    // run and time part 1
+    // test and run part 1
+    safe_check(part1, example.clone(), expected1, day, 1);
     time_part(part1, input.clone(), day, 1);
 
-    // test part 2
-    test2(example);
-    println!("Day {}, Part 2 test passed !", day);
-
-    // run part 2
+    // test and run part 2
+    safe_check(part2, example, expected2, day, 2);
     time_part(part2, input, day, 2);
 }
 
