@@ -22,8 +22,7 @@ pub fn part2(input: String) -> usize {
         })
         .collect();
 
-    total_calories.sort();
-    total_calories.reverse();
+    total_calories.sort_by(|a, b| b.cmp(a));
     total_calories.into_iter().take(3).sum()
 }
 
