@@ -66,7 +66,11 @@ fn part1(input: &str) -> usize {
 fn part2(input: &str) -> usize {
     let mut cave = get_input(input);
     let expected = (cave.width * cave.height) as usize;
-    (1..usize::MAX).take_while(|_| cave.step() != expected).last().unwrap() + 1
+    (1..usize::MAX)
+        .take_while(|_| cave.step() != expected)
+        .last()
+        .unwrap()
+        + 1
 }
 
 fn main() {

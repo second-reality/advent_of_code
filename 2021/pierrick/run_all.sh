@@ -6,8 +6,13 @@ cd $(readlink -f $(dirname $0))
 
 export TIMEFORMAT="%R seconds" # elapsed
 
-for day in */; do
-  day=$(echo $day | sed -e 's#/##')
+for day in $(find -maxdepth 1 -mindepth 1 -type d | sort -r); do
+  day=$(echo $day | sed -e 's#./##')
   echo "******** DAY $day *******"
-  cd $day && cargo build --release && time ./target/release/ex$day -q && cd ..
+  pushd $day > /dev/null
+  cargo fmt
+  cargo clippy
+  cargo build --release
+  time ./target/release/ex$day
+  popd > /dev/null
 done
