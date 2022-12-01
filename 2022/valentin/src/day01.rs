@@ -3,7 +3,7 @@ pub fn part1(input: String) -> usize {
         .trim()
         .split("\n\n")
         .map(|elf| {
-            elf.split("\n")
+            elf.split('\n')
                 .map(|calories| calories.parse::<usize>().unwrap())
                 .sum()
         })
@@ -16,7 +16,7 @@ pub fn part2(input: String) -> usize {
         .trim()
         .split("\n\n")
         .map(|elf| {
-            elf.split("\n")
+            elf.split('\n')
                 .map(|calories| calories.parse::<usize>().unwrap())
                 .sum()
         })
