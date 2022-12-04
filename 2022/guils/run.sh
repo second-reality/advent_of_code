@@ -10,6 +10,7 @@ for day in day*; do
     cd "$dir/$day"
     echo "AoC build $day"
     cargo fmt
+    cargo clippy
     cargo build
     echo "AoC run $day"
     target/debug/"$day"
