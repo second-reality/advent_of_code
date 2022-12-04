@@ -53,16 +53,21 @@ fn safe_check(part_func: PartSolution, example: String, expected: usize, day: u3
 }
 
 fn get_string_from(day: u32, is_example: bool) -> String {
-    let (dir, err_msg) = if is_example {
-        ("examples", "Example file missing!")
-    } else {
-        ("inputs", "Input file missing!")
-    };
+    let dir = if is_example { "examples" } else { "inputs" };
     let path = env::current_dir()
         .unwrap()
         .join(dir)
         .join(format!("{:02}.txt", day));
-    fs::read_to_string(path).expect(err_msg)
+    match fs::read_to_string(path) {
+        Ok(content) => content,
+        Err(_) => {
+            println!(
+                "{}Error file {}/{:02}.txt doesn't exist!{}",
+                RED, dir, day, NO_COLOR
+            );
+            panic!("get_string_from File Not Found")
+        }
+    }
 }
 
 fn exec_and_time_day(day: u32) {
