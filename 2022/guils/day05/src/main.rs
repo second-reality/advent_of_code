@@ -9,30 +9,25 @@ fn read_input() -> Vec<String> {
 }
 
 fn to_actions(input: &[String]) -> Vec<Action> {
-    let mut actions = Vec::<Action>::new();
-    for line in input.iter() {
-        let tokens = line.split(' ').collect::<Vec<_>>();
-        if tokens[0].eq("move") {
-            let action = (
-                tokens[1].parse::<i32>().unwrap(),
-                tokens[3].parse::<i32>().unwrap() - 1,
-                tokens[5].parse::<i32>().unwrap() - 1,
-            );
-            actions.push(action);
-        }
-    }
-    actions
+    input
+        .iter()
+        .filter(|x| x.starts_with("move "))
+        .map(|x| {
+            let action = x
+                .split(' ')
+                .map(|x| x.parse::<i32>().unwrap_or(0))
+                .collect::<Vec<_>>();
+            (action[1], action[3] - 1, action[5] - 1)
+        })
+        .collect()
 }
 
 fn to_stacks(input: &[String]) -> Vec<Stack> {
-    let mut stacks = Vec::<Stack>::new();
-    for line in input.iter() {
-        if line[0..2].eq(" 1") {
-            break;
-        }
+    let mut stacks: Vec<Stack> = Vec::<Stack>::new();
+    for line in input.iter().take_while(|x| x[0..2].ne(" 1")) {
         if stacks.is_empty() {
             for _ in 0..(line.len() + 3) / 4 {
-                stacks.push(Stack::new())
+                stacks.push(Stack::new());
             }
         }
         for s in 0..stacks.len() {
