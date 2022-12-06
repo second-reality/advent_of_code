@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 type Input = Vec<char>;
 
 fn input(input_str: &str) -> Input {
@@ -6,12 +8,7 @@ fn input(input_str: &str) -> Input {
 
 fn find_marker(i: &Input, win_size: usize) -> usize {
     i.windows(win_size)
-        .position(|w| {
-            let mut chars = w.to_vec();
-            chars.sort();
-            chars.dedup();
-            chars.len() == win_size
-        })
+        .position(|w| HashSet::<char>::from_iter(w.to_owned()).len() == win_size)
         .unwrap()
         + win_size
 }
