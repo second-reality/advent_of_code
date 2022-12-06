@@ -8,7 +8,7 @@ fn input(input_str: &str) -> Input {
 
 fn find_marker(i: &Input, win_size: usize) -> usize {
     i.windows(win_size)
-        .position(|w| HashSet::<char>::from_iter(w.to_owned()).len() == win_size)
+        .position(|w| HashSet::<&char>::from_iter(w).len() == win_size)
         .unwrap()
         + win_size
 }
