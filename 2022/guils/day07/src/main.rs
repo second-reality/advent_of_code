@@ -11,57 +11,48 @@ fn read_input() -> Vec<String> {
 }
 
 fn parse_fs(commands: &[String]) -> PathMap {
-    let mut path = Vec::<String>::new();
-    let mut path_map = PathMap::new();
     commands
         .iter()
-        .map(|line| {
-            let cmd = line.split(' ').collect_vec();
-            match cmd[0] {
-                "$" => {
+        .fold(
+            (&mut Vec::new(), &mut PathMap::new()),
+            |(path, path_map), line| {
+                let cmd = line.split(' ').collect_vec();
+                if cmd[0] == "$" {
                     if cmd[1] == "cd" {
                         if cmd[2] == "/" {
                             path.clear();
                         } else if cmd[2] == ".." {
-                            path.pop().unwrap();
+                            path.pop();
                         } else {
-                            path.push(cmd[2].to_string());
+                            path.push(cmd[2]);
                         }
                     }
-                    (String::from(""), -1)
+                } else {
+                    let size = path_map.entry(path.join("/")).or_insert(0);
+                    if cmd[0] != "dir" {
+                        *size += cmd[0].parse::<i32>().unwrap();
+                    }
                 }
-                "dir" => (path.join("/"), 0),
-                size => (path.join("/"), size.parse::<i32>().unwrap()),
-            }
-        })
-        .filter(|x| x.1 >= 0)
-        .map(|(path_str, e_size)| match path_map.get(&path_str) {
-            Some(size) => path_map.insert(path_str.clone(), size + e_size),
-            None => path_map.insert(path_str.clone(), e_size),
-        })
-        .collect_vec();
-    path_map
+                (path, path_map)
+            },
+        )
+        .1
+        .to_owned()
 }
 
 fn collect_dir_sizes(path_map: &PathMap) -> PathMap {
-    let mut dir_map = path_map.clone();
     path_map
         .keys()
         .sorted_by_key(|x| x.len())
         .rev()
-        .filter(|&x| x.ne(""))
-        .map(|path_str| {
-            let size = dir_map.get(path_str).unwrap();
+        .filter(|x| !x.is_empty())
+        .fold(&mut path_map.clone(), |path_map, path_str| {
+            let size = path_map.get(path_str).unwrap().to_owned();
             let parent_str = path_str.split('/').dropping_back(1).join("/");
-            match dir_map.get(&parent_str) {
-                Some(psize) => {
-                    dir_map.insert(parent_str, psize + size);
-                }
-                None => panic!(),
-            }
+            path_map.entry(parent_str).and_modify(|x| *x += size);
+            path_map
         })
-        .collect_vec();
-    dir_map
+        .to_owned()
 }
 
 fn collect_step1(path_map: &PathMap) -> i32 {
@@ -80,16 +71,17 @@ fn collect_step2(path_map: &PathMap) -> i32 {
     let limit = path_map.get("").unwrap() - 40000000;
     path_map
         .values()
-        .sorted()
-        .skip_while(|&x| *x < limit)
-        .take(1)
-        .sum()
+        .filter(|&size| *size >= limit)
+        .min()
+        .unwrap()
+        .to_owned()
 }
 
 fn step2() {
     let input = read_input();
     let path_map = parse_fs(&input);
     let dir_map = collect_dir_sizes(&path_map);
+    collect_dir_sizes(&dir_map);
     let res = collect_step2(&dir_map);
     println!("step2: {res}");
 }
