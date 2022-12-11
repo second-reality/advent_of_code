@@ -1,4 +1,7 @@
-fn parser(input: String) -> (Vec<Vec<char>>, Vec<(usize, usize, usize)>) {
+type Instructions = Vec<(usize, usize, usize)>;
+type CratesStacks = Vec<Vec<char>>;
+
+fn parser(input: String) -> (CratesStacks, Instructions) {
     let mut input = input.trim_end().split("\n\n");
     let (stacks_str, instructions) = (input.next().unwrap(), input.next().unwrap());
     let mut stacks_str = stacks_str.split('\n').rev();
@@ -11,7 +14,7 @@ fn parser(input: String) -> (Vec<Vec<char>>, Vec<(usize, usize, usize)>) {
         .unwrap()
         .parse()
         .unwrap();
-    let mut stacks: Vec<Vec<char>> = (0..n).map(|_| Vec::new()).collect();
+    let mut stacks: CratesStacks = (0..n).map(|_| Vec::new()).collect();
     for crates in stacks_str {
         crates
             .chars()
@@ -21,7 +24,7 @@ fn parser(input: String) -> (Vec<Vec<char>>, Vec<(usize, usize, usize)>) {
             .filter_map(|(i, c)| if c == ' ' { None } else { Some((i, c)) })
             .for_each(|(i, c)| stacks[i].push(c))
     }
-    let instructions: Vec<(usize, usize, usize)> = instructions
+    let instructions: Instructions = instructions
         .split('\n')
         .map(|instruction| {
             let mut digits = instruction

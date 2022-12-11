@@ -26,12 +26,11 @@ impl FromStr for Action {
     }
 }
 fn sign_of(i: i32) -> i32 {
-    if i < 0 {
-        -1
-    } else if i == 0 {
-        0
-    } else {
-        1
+    use std::cmp::Ordering::*;
+    match i.cmp(&0) {
+        Less => -1,
+        Equal => 0,
+        Greater => 1,
     }
 }
 struct Rope {

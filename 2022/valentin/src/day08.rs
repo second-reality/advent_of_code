@@ -12,11 +12,10 @@ impl Grid {
         let trees: Vec<u8> = input
             .trim()
             .split('\n')
-            .map(|line| {
+            .flat_map(|line| {
                 n_cols = line.len();
                 line.chars().map(|h| h.to_digit(10).unwrap() as u8)
             })
-            .flatten()
             .collect();
         let n_rows = trees.len() / n_cols;
         Grid {
