@@ -6,8 +6,7 @@ use std::collections::HashSet;
 const INPUT: &str = include_str!("../input.txt");
 
 type Coord = (i32, i32);
-type Height = i32;
-type Plane = HashMap<Coord, Height>;
+type Plane = HashMap<Coord, i32>;
 type Field = (Coord, Plane);
 type PlayField = (Coord, Coord, Field);
 type CoordSet = HashSet<Coord>;
@@ -21,67 +20,58 @@ fn parse_field(input: &[String]) -> PlayField {
     let mut start: Coord = (0, 0);
     let mut end: Coord = (0, 0);
     let dim = (input.len() as i32, input[0].len() as i32);
-    input.iter().enumerate().for_each(|(l, line)| {
-        line.chars().enumerate().for_each(|(c, ch)| {
+    for (l, line) in input.iter().enumerate() {
+        for (c, ch) in line.chars().enumerate() {
             let coord = (l as i32, c as i32);
-            plane.insert(
-                coord,
-                match ch {
-                    'S' => {
-                        start = coord;
-                        0
-                    }
-                    'E' => {
-                        end = coord;
-                        25
-                    }
-                    x => x as i32 - 'a' as i32,
-                },
-            );
-        })
-    });
+            let h = match ch {
+                'S' => {
+                    start = coord;
+                    0
+                }
+                'E' => {
+                    end = coord;
+                    25
+                }
+                l => l as i32 - 'a' as i32,
+            };
+            plane.insert(coord, h);
+        }
+    }
     (start, end, (dim, plane))
 }
 
-fn all_dists_from(plane: &Plane, starts: &CoordSet) -> Plane {
+fn all_dists_from(playfield: &PlayField, starts: &CoordSet) -> Plane {
+    let (_, _, (_, plane)) = playfield;
     let mut coords = starts.clone();
     let mut dists = Plane::from_iter(coords.iter().map(|coord| (*coord, 0)));
     while !coords.is_empty() {
-        let mut new_coords = coords.clone();
-        for coord in coords {
-            new_coords.remove(&coord);
-            let d = *dists.get(&coord).unwrap();
-            let local_coords = search_coords(plane, &coord);
-            for next_coord in local_coords {
-                let next_d = dists.get(&next_coord);
-                let new_d = match next_d {
-                    Some(x) => {
-                        if d + 1 < *x {
-                            d + 1
-                        } else {
-                            0
-                        }
-                    }
-                    None => d + 1,
-                };
-                if new_d > 0 {
-                    dists.insert(next_coord, new_d);
-                    new_coords.insert(next_coord);
-                }
+        for coord in coords.clone() {
+            coords.remove(&coord);
+            let dist = *dists.get(&coord).unwrap() + 1;
+            let nears = neighbours(plane, &coord);
+            let nexts = nears
+                .iter()
+                .filter(|coord| match dists.get(coord) {
+                    Some(x) => dist < *x,
+                    None => true,
+                })
+                .collect_vec();
+            for next in nexts {
+                dists.insert(*next, dist);
+                coords.insert(*next);
             }
         }
-        coords = new_coords;
     }
     dists
 }
 
-fn all_dists(playfield: &PlayField) -> Plane {
-    let (start, _, (_, plane)) = playfield;
-    let coords: CoordSet = vec![*start].iter().copied().collect();
-    all_dists_from(plane, &coords)
+fn all_dists_from_start(playfield: &PlayField) -> Plane {
+    let (start, _, _) = playfield;
+    let coords = CoordSet::from([*start]);
+    all_dists_from(playfield, &coords)
 }
 
-fn search_coords(plane: &Plane, pos: &Coord) -> CoordSet {
+fn neighbours(plane: &Plane, pos: &Coord) -> CoordSet {
     let h = plane.get(pos).unwrap();
     vec![(-1, 0), (1, 0), (0, -1), (0, 1)]
         .iter()
@@ -104,25 +94,25 @@ fn search_coords(plane: &Plane, pos: &Coord) -> CoordSet {
 fn step1() {
     let input = read_input();
     let field = parse_field(&input);
-    let dists = all_dists(&field);
+    let dists = all_dists_from_start(&field);
     let res = dists.get(&field.1).unwrap();
     println!("step1: {res}");
 }
 
-fn find_starts(plane: &Plane) -> CoordSet {
+fn find_starts(playfield: &PlayField) -> CoordSet {
+    let (_, _, (_, plane)) = playfield;
     plane
         .iter()
-        .filter_map(|(coord, v)| if *v == 0 { Some(coord) } else { None })
-        .copied()
+        .filter_map(|(coord, v)| if *v == 0 { Some(*coord) } else { None })
         .collect()
 }
 
 fn step2() {
     let input = read_input();
-    let (_, end, (_, plane)) = parse_field(&input);
-    let starts = find_starts(&plane);
-    let dists = all_dists_from(&plane, &starts);
-    let res = dists.get(&end).unwrap();
+    let field = parse_field(&input);
+    let starts = find_starts(&field);
+    let dists = all_dists_from(&field, &starts);
+    let res = dists.get(&field.1).unwrap();
     println!("step2: {res}");
 }
 
