@@ -7,12 +7,11 @@ fn main() {
     println!("part 2 : {}", resolve(input, 3).unwrap());
 }
 
-fn resolve(input: &str, num_elves: usize) -> Result<i32, GenericError>
-{
-    let mut current_cal_count : i32 = 0;
+fn resolve(input: &str, num_elves: usize) -> Result<i32, GenericError> {
+    let mut current_cal_count: i32 = 0;
 
     // sorted vec
-    let mut max_cal : Vec<i32> = vec![0; num_elves];
+    let mut max_cal: Vec<i32> = vec![0; num_elves];
 
     for line in input.lines() {
         if line.is_empty() {
@@ -20,10 +19,9 @@ fn resolve(input: &str, num_elves: usize) -> Result<i32, GenericError>
                 max_cal[0] = current_cal_count;
             }
 
-            max_cal.sort();
+            max_cal.sort_unstable();
             current_cal_count = 0;
-        }
-        else {
+        } else {
             current_cal_count += line.parse::<i32>()?;
         }
     }
@@ -37,15 +35,15 @@ fn resolve(input: &str, num_elves: usize) -> Result<i32, GenericError>
 }
 
 #[cfg(test)]
-mod test
-{
+mod test {
     use crate::resolve;
 
     #[test]
-    fn example_part1()
-    {
-        assert_eq!(24_000,
-                   resolve(r#"1000
+    fn example_part1() {
+        assert_eq!(
+            24_000,
+            resolve(
+                r#"1000
 2000
 3000
 
@@ -58,15 +56,19 @@ mod test
 8000
 9000
 
-10000"#, 1).unwrap());
-
+10000"#,
+                1
+            )
+            .unwrap()
+        );
     }
 
     #[test]
-    fn example_part2()
-    {
-        assert_eq!(45_000,
-                   resolve(r#"1000
+    fn example_part2() {
+        assert_eq!(
+            45_000,
+            resolve(
+                r#"1000
 2000
 3000
 
@@ -79,7 +81,10 @@ mod test
 8000
 9000
 
-10000"#, 3).unwrap());
-
+10000"#,
+                3
+            )
+            .unwrap()
+        );
     }
 }
