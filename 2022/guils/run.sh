@@ -11,7 +11,7 @@ for day in day*; do
     echo "AoC build $day"
     cargo fmt
     cargo clippy
-    cargo build
+    cargo build --release
     echo "AoC run $day"
-    target/debug/"$day"
+    time -p target/release/"$day"
 done
