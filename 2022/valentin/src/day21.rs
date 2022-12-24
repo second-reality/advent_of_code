@@ -1,13 +1,12 @@
 use std::collections::HashMap;
 #[derive(Clone)]
 enum Expr {
-    Unknown,
+    UnknownConst,
     Const(isize),
     Add(String, String),
     Sub(String, String),
     Mul(String, String),
     Div(String, String),
-    Eq(String, String),
 }
 
 type SymTable = HashMap<String, Expr>;
@@ -16,21 +15,21 @@ impl Expr {
     fn eval(&self, symbols: &mut SymTable) -> Option<isize> {
         use Expr::*;
         match self {
-            Unknown => None,
+            UnknownConst => None,
             Const(int) => Some(*int),
-            Add(name1, name2)
-            | Sub(name1, name2)
-            | Mul(name1, name2)
-            | Div(name1, name2)
-            | Eq(name1, name2) => {
+            Add(name1, name2) | Sub(name1, name2) | Mul(name1, name2) | Div(name1, name2) => {
                 // recursive call with memoization on variable with name1
                 let subexpr1 = symbols.get(name1).unwrap().clone();
                 let int1 = subexpr1.eval(symbols);
-                symbols.insert(name1.clone(), int1.map(Const).unwrap_or(Unknown));
+                if let Some(i) = int1 {
+                    symbols.insert(name1.clone(), Const(i));
+                }
                 // recursive call with memoization on variable with name2
                 let subexpr2 = symbols.get(name2).unwrap().clone();
                 let int2 = subexpr2.eval(symbols);
-                symbols.insert(name2.clone(), int2.map(Const).unwrap_or(Unknown));
+                if let Some(i) = int2 {
+                    symbols.insert(name2.clone(), Const(i));
+                }
                 if let (None, _) | (_, None) = (int1, int2) {
                     None
                 } else {
@@ -41,15 +40,52 @@ impl Expr {
                         Sub(..) => Some(int1 - int2),
                         Mul(..) => Some(int1 * int2),
                         Div(..) => Some(int1 / int2),
-                        Eq(..) => {
-                            if int1 == int2 {
-                                Some(0)
-                            } else {
-                                Some(-1)
-                            }
-                        }
                         _ => panic!("WTF const, unknwn"),
                     }
+                }
+            }
+        }
+    }
+
+    fn reverse_eval(&self, symbols: &mut SymTable, target: isize) -> isize {
+        use Expr::*;
+        match self {
+            Const(_) => panic!("wtf const"),
+            UnknownConst => target,
+            Add(name1, name2) => {
+                let subexpr1 = symbols.get(name1).unwrap().clone();
+                let subexpr2 = symbols.get(name2).unwrap().clone();
+                if let (Const(i), other) | (other, Const(i)) = (subexpr1, subexpr2) {
+                    other.reverse_eval(symbols, target - i)
+                } else {
+                    panic!("wtf add");
+                }
+            }
+            Mul(name1, name2) => {
+                let subexpr1 = symbols.get(name1).unwrap().clone();
+                let subexpr2 = symbols.get(name2).unwrap().clone();
+                if let (Const(i), other) | (other, Const(i)) = (subexpr1, subexpr2) {
+                    other.reverse_eval(symbols, target / i)
+                } else {
+                    panic!("wtf mul");
+                }
+            }
+            Sub(name1, name2) => {
+                let subexpr1 = symbols.get(name1).unwrap().clone();
+                let subexpr2 = symbols.get(name2).unwrap().clone();
+                match (subexpr1, subexpr2) {
+                    (Const(i), other) => other.reverse_eval(symbols, i - target),
+                    (other, Const(i)) => other.reverse_eval(symbols, target + i),
+                    _ => panic!("wtf sub"),
+                }
+            }
+            Div(name1, name2) => {
+                let subexpr1 = symbols.get(name1).unwrap().clone();
+                let subexpr2 = symbols.get(name2).unwrap().clone();
+                match (subexpr1, subexpr2) {
+                    (Const(i), other) => other.reverse_eval(symbols, i / target),
+                    (other, Const(i)) => other.reverse_eval(symbols, target * i),
+                    _ => panic!("wtf div"),
                 }
             }
         }
@@ -89,15 +125,23 @@ pub fn part1(input: String) -> usize {
 
 pub fn part2(input: String) -> usize {
     let mut symbols = parse(input);
-    symbols.insert("humn".to_owned(), Expr::Unknown);
+    symbols.insert("humn".to_owned(), Expr::UnknownConst);
     if let Expr::Add(dep1, dep2) = symbols.get("root").unwrap().clone() {
-        symbols.insert("root".to_owned(), Expr::Eq(dep1.clone(), dep2.clone()));
         let dep1 = symbols.get(&dep1).unwrap().clone();
-        println!("dep1 = {:?}", dep1.eval(&mut symbols));
+        let res1 = dep1.eval(&mut symbols);
         let dep2 = symbols.get(&dep2).unwrap().clone();
-        println!("dep2 = {:?}", dep2.eval(&mut symbols));
+        let res2 = dep2.eval(&mut symbols);
+        match (res1, res2) {
+            (Some(target), None) => {
+                return dep2.reverse_eval(&mut symbols, target) as usize;
+            }
+            (None, Some(target)) => {
+                return dep1.reverse_eval(&mut symbols, target) as usize;
+            }
+            _ => panic!("No dependancy is known"),
+        }
     }
-    301
+    panic!("No root");
 }
 
 pub const EXPECTED1: usize = 152;
