@@ -41,7 +41,7 @@ impl Expr {
         match (self, other) {
             (Int(a), Int(b)) => {
                 println!("cmp Left = {}, Right = {}", a, b);
-                a.cmp(&b)
+                a.cmp(b)
             }
             (Exprs(left), Exprs(right)) => {
                 let n = left.len().min(right.len());
@@ -94,7 +94,7 @@ pub fn part2(input: String) -> usize {
         .trim()
         .split('\n')
         .filter(|line| !line.is_empty())
-        .map(|line| Expr::new(line))
+        .map(Expr::new)
         .collect();
     let divider2 = Expr::new("[[2]]");
     let divider6 = Expr::new("[[6]]");

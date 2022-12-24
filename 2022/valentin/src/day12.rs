@@ -19,11 +19,11 @@ impl Grid {
                     .enumerate()
                     .map(|(j, c)| match c {
                         'S' => {
-                            start = (i, j, 'a' as u8);
+                            start = (i, j, b'a');
                             'a'
                         }
                         'E' => {
-                            end = (i, j, 'z' as u8);
+                            end = (i, j, b'z');
                             'z'
                         }
                         other => other,
@@ -61,7 +61,7 @@ fn dijkstra(grid: Grid, is_part_one: bool) -> usize {
     } else {
         queue.extend(grid.squares.iter().enumerate().flat_map(|(i, line)| {
             line.iter().enumerate().filter_map(move |(j, high)| {
-                if *high == 'a' as u8 {
+                if *high == b'a' {
                     Some((i, j, *high))
                 } else {
                     None
@@ -87,7 +87,7 @@ fn dijkstra(grid: Grid, is_part_one: bool) -> usize {
     }
     let mut res = 0;
     let mut cur = grid.end;
-    while (is_part_one && cur != grid.start) || (cur.2 != 'a' as u8) {
+    while (is_part_one && cur != grid.start) || (cur.2 != b'a') {
         res += 1;
         cur = *prev.get(&cur).unwrap();
     }

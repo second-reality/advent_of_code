@@ -85,7 +85,7 @@ impl FromStr for Cave {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let mut walls: HashSet<Coord> = HashSet::new();
         for line in s.split('\n') {
-            let mut points = line.split(" -> ").map(|s| Coord::from_input_str(s));
+            let mut points = line.split(" -> ").map(Coord::from_input_str);
             let mut prev = points.next().unwrap();
             for p in points {
                 let range = prev.range_inclusive(&p);

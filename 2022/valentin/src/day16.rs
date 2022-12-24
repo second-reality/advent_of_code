@@ -44,12 +44,12 @@ impl FromStr for Valves {
                     .split('=')
                     .last()
                     .unwrap()
-                    .replace(";", "")
+                    .replace(';', "")
                     .parse()
                     .unwrap();
                 pressures.push(pressure);
                 it.nth(3);
-                neighbors.push(it.map(|o| o.replace(",", "")).collect());
+                neighbors.push(it.map(|o| o.replace(',', "")).collect());
                 valve
             })
             .collect();
@@ -80,7 +80,7 @@ impl FromStr for Valves {
 }
 
 impl Valves {
-    fn init_dist(&mut self, start: usize, neighbors: &Vec<Vec<usize>>) {
+    fn init_dist(&mut self, start: usize, neighbors: &[Vec<usize>]) {
         let mut visited: Vec<usize> = vec![start];
         let mut queue = VecDeque::from([(start, 0)]);
         while let Some((cur_index, d_from_start)) = queue.pop_front() {
@@ -130,12 +130,12 @@ impl Valves {
 
     fn update_bests_scores(
         &self,
-        known_best: &mut Vec<usize>,
+        known_best: &mut [usize],
         start: usize,
         time_budget: usize,
-        path1: &Vec<usize>,
-        path2: &Vec<usize>,
-        cache_dists: &Vec<Vec<usize>>,
+        path1: &[usize],
+        path2: &[usize],
+        cache_dists: &[Vec<usize>],
     ) {
         for a in known_best.iter_mut() {
             *a = 0;
@@ -159,8 +159,8 @@ impl Valves {
         }));
         timed_pressures.sort();
         for (t, press) in timed_pressures {
-            for i in t..(known_best.len()) {
-                known_best[i] += press;
+            for best in known_best.iter_mut().skip(t) {
+                *best += press;
             }
         }
     }
@@ -262,19 +262,17 @@ impl Valves {
                 no_change = false;
             }
 
-            if no_change {
-                if pts_max.0 + pts_max.1 < y_pt + e_pt {
-                    pts_max = (y_pt, e_pt);
-                    self.update_bests_scores(
-                        &mut known_best,
-                        index_init,
-                        time_budget,
-                        &y_prevs,
-                        &e_prevs,
-                        &cache_dists,
-                    );
-                    best_paths = (y_prevs, e_prevs);
-                }
+            if no_change && pts_max.0 + pts_max.1 < y_pt + e_pt {
+                pts_max = (y_pt, e_pt);
+                self.update_bests_scores(
+                    &mut known_best,
+                    index_init,
+                    time_budget,
+                    &y_prevs,
+                    &e_prevs,
+                    &cache_dists,
+                );
+                best_paths = (y_prevs, e_prevs);
             }
         }
         let _path: Vec<&String> = best_paths.0.into_iter().map(|i| &self.names[i]).collect();

@@ -90,7 +90,7 @@ impl Game {
             visited.insert(game.clone());
             let mut options = Vec::new();
             while options.is_empty() && game.timing < time_budget {
-                options = game.craft_options(&blueprint);
+                options = game.craft_options(blueprint);
                 game.production();
                 game.timing += 1;
             }

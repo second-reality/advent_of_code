@@ -16,7 +16,7 @@ impl FromStr for Coord {
             .split(' ')
             .filter(|sp| sp.contains('='))
             .map(|sp| sp.split('=').last().unwrap());
-        let x: i32 = tmp.next().unwrap().replace(",", "").parse()?;
+        let x: i32 = tmp.next().unwrap().replace(',', "").parse()?;
         let y: i32 = tmp.next().unwrap().parse()?;
         Ok(Coord { x, y })
     }
