@@ -4,14 +4,6 @@ set -euo pipefail
 
 dir="$(dirname "$(readlink -e "$0")")"
 
-echo "$dir"
-cd "$dir"
-for day in day*; do
-    cd "$dir/$day"
-    echo "AoC build $day"
-    cargo fmt
-    cargo clippy
-    cargo build --release
-    echo "AoC run $day"
-    time -p target/release/"$day"
-done
+/usr/bin/time -f 'Total format elapsed: %e' "$dir"/format.sh
+/usr/bin/time -f 'Total build elapsed: %e' "$dir"/build.sh
+/usr/bin/time -f 'Total run elapsed: %e' "$dir"/exec.sh
