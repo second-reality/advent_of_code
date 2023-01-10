@@ -1,8 +1,11 @@
 use itertools::Itertools;
+use tree::*;
 
 //const INPUT: &str = include_str!("../test.txt");
 const INPUT: &str = include_str!("../input.txt");
 const KEY: i64 = 811589153;
+const USE_TREE: bool = true;
+//const USE_TREE: bool = false;
 
 fn read_input() -> Vec<i64> {
     INPUT
@@ -12,25 +15,48 @@ fn read_input() -> Vec<i64> {
         .collect_vec()
 }
 
-fn mix(input: &[i64], rounds: i32) -> Vec<i64> {
+fn mix_vec(input: &[i64], rounds: i32) -> Vec<i64> {
+    let index_positions =
+        |positions: &[usize], idx: usize| positions.iter().position(|&x| x == idx).unwrap();
+    let positions_val =
+        |positions: &[usize], vec: &[i64]| positions.iter().map(|&x| vec[x]).collect::<Vec<i64>>();
     let mut positions = (0..input.len()).collect_vec();
     let len = input.len() as i64;
-    for _ in 0..rounds {
-	for (idx, val) in input.iter().enumerate() {
-	    let pos = positions.iter().position(|&x| x == idx).unwrap();
-	    let target_pos = (pos as i64 + val).rem_euclid(len - 1) as usize;
-	    positions.remove(pos);
-	    positions.insert(target_pos, idx);
-	}
+    for _r in 0..rounds {
+        for (idx, val) in input.iter().enumerate() {
+            let pos = index_positions(&positions, idx);
+            let target_pos = (pos as i64 + val).rem_euclid(len - 1) as usize;
+            positions.remove(pos);
+            positions.insert(target_pos, idx);
+        }
     }
-    positions.iter().map(|&x| input[x]).collect()
+    positions_val(&positions, input)
+}
+
+fn mix_tree(input: &[i64], rounds: i32) -> Vec<i64> {
+    let mut tree = input.iter().copied().collect::<OrdTree<i64>>();
+    let len = input.len() as i64;
+    for _ in 0..rounds {
+        for (idx, val) in input.iter().enumerate() {
+            let pos = tree.index_cell(idx as i32);
+            let target_pos = (pos as i64 + val).rem_euclid(len - 1) as usize;
+            tree.remove_at_cell(idx as i32);
+            tree.insert_cell(target_pos, idx as i32);
+        }
+    }
+    tree.to_vec()
+}
+
+fn mix(input: &[i64], rounds: i32) -> Vec<i64> {
+    if USE_TREE {
+        mix_tree(input, rounds)
+    } else {
+        mix_vec(input, rounds)
+    }
 }
 
 fn compute_sum(input: &[i64], positions: &[i64]) -> i64 {
-    let pos_0 = positions
-        .iter()
-        .take_while(|&x| *x != 0)
-        .count();
+    let pos_0 = positions.iter().take_while(|&x| *x != 0).count();
     [1000, 2000, 3000]
         .iter()
         .map(|x| positions[(pos_0 + x) % input.len()])
