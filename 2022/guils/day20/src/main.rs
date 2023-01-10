@@ -38,10 +38,10 @@ fn mix_tree(input: &[i64], rounds: i32) -> Vec<i64> {
     let len = input.len() as i64;
     for _ in 0..rounds {
         for (idx, val) in input.iter().enumerate() {
-            let pos = tree.index_cell(idx as i32);
+            let pos = tree.index_cell(idx);
             let target_pos = (pos as i64 + val).rem_euclid(len - 1) as usize;
-            tree.remove_at_cell(idx as i32);
-            tree.insert_cell(target_pos, idx as i32);
+            tree.remove_at_cell(idx);
+            tree.insert_cell(target_pos, idx);
         }
     }
     tree.to_vec()
