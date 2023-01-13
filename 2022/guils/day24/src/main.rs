@@ -1,7 +1,7 @@
 use itertools::Itertools;
+use std::collections::BinaryHeap;
 use std::collections::HashMap;
 use std::collections::HashSet;
-use std::collections::VecDeque;
 
 //const INPUT: &str = include_str!("../test.txt");
 const INPUT: &str = include_str!("../input.txt");
@@ -89,15 +89,15 @@ fn get_maps(map: &VMap) -> Vec<VSet> {
     maps
 }
 
-fn walk(maps: &[VSet], dim: Coord, start: Coord, end: Coord, step: usize) -> usize {
+fn walk(maps: &[VSet], dim: Coord, start: Coord, end: Coord, init_step: i32) -> i32 {
     let mut visited = HashSet::<(Coord, usize)>::new();
-    let mut todo = VecDeque::<(Coord, usize)>::new();
+    let mut todo = BinaryHeap::new();
     let mut moves = 0;
     let mut skip_map = 0;
-
-    todo.push_front((start, step));
-    while !todo.is_empty() {
-        let (pos, step) = todo.pop_back().unwrap();
+    let dist_heuristic =
+        |pos: Coord, step: i32| step + (end.0 - pos.0).abs() + (end.1 - pos.1).abs();
+    todo.push((-dist_heuristic(start, init_step), start, init_step));
+    while let Some((_, pos, step)) = todo.pop() {
         if pos == end {
             if DEBUG {
                 println!("moves: {moves}, skip_map {skip_map}");
@@ -111,7 +111,7 @@ fn walk(maps: &[VSet], dim: Coord, start: Coord, end: Coord, step: usize) -> usi
                 todo.len()
             );
         }
-        let map_id = (step + 1) % maps.len();
+        let map_id = (step as usize + 1) % maps.len();
         let map = &maps[map_id];
         for next in [
             (pos.0 - 1, pos.1),
@@ -135,7 +135,7 @@ fn walk(maps: &[VSet], dim: Coord, start: Coord, end: Coord, step: usize) -> usi
                 continue;
             }
             visited.insert((next, map_id));
-            todo.push_front((next, step + 1))
+            todo.push((-dist_heuristic(next, step + 1), next, step + 1));
         }
     }
     unreachable!()
