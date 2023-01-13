@@ -5,12 +5,12 @@ use std::collections::VecDeque;
 
 //const INPUT: &str = include_str!("../test.txt");
 const INPUT: &str = include_str!("../input.txt");
+const DEBUG: bool = false;
 
 type Coord = (i32, i32);
 type Map = HashMap<Coord, char>;
 type VMap = Vec<(Coord, char)>;
-type VSet = HashSet<Coord>;
-type TMap = HashMap<(Coord, usize), usize>;
+type VSet = Vec<bool>;
 
 fn read_input() -> VMap {
     INPUT
@@ -73,122 +73,94 @@ fn lcm(a: i32, b: i32) -> i32 {
     (a * b).abs() / gcd(a, b)
 }
 
-fn walk_step(vec_map: &Vec<VMap>, start: Coord, end: Coord, step: usize) -> usize {
-    let dim = map_dim(&vec_map[0]);
-    let mut time_map = TMap::new();
-    let mut todo = VecDeque::<(Coord, usize)>::new();
-    let mut min = usize::MAX;
-    let mut sets = Vec::<VSet>::new();
-    for map in vec_map.iter() {
-        sets.push(map.iter().map(|&(pos, _)| pos).collect::<VSet>());
-    }
-    todo.push_front((start, step));
-    //println!("Initial: step {step} {start:?}:");
-    //print_map_pos(&vec_map[step % vec_map.len()], start);
-
-    'stack: while !todo.is_empty() {
-        let (pos, step) = todo.pop_back().unwrap();
-        if step + 1 > min {
-            continue 'stack;
-        }
-        let prev_map_id = step % vec_map.len();
-        if let Some(&s) = time_map.get(&(pos, prev_map_id)) {
-            if step >= s {
-                continue 'stack;
-            }
-        }
-        time_map.insert((pos, prev_map_id), step);
-
-        let map_id = (step + 1) % vec_map.len();
-        let set = &sets[map_id];
-
-        let cands = [
-            (pos.0 + 1, pos.1),
-            (pos.0, pos.1 + 1),
-            (pos.0 - 1, pos.1),
-            (pos.0, pos.1 - 1),
-            pos,
-        ]
-        .iter()
-        .filter_map(|&next| {
-            if next.0 >= 1 && next.0 <= dim.0 && next.1 >= 1 && next.1 <= dim.1
-                || next == end
-                || next == start
-            {
-                Some(next)
-            } else {
-                None
-            }
-        })
-        .collect_vec();
-        if cands
-            .iter()
-            .filter_map(|&next| if next == end { Some(next) } else { None })
-            .count()
-            == 1
-        {
-            if step + 1 < min {
-                min = step + 1;
-            }
-            continue 'stack;
-        }
-        for cand in cands.iter() {
-            if *cand == start || !set.contains(cand) {
-                todo.push_front((*cand, step + 1))
-            }
-        }
-    }
-    assert!(min != usize::MAX);
-    min
-}
-
-fn get_maps(map: &VMap) -> Vec<VMap> {
+fn get_maps(map: &VMap) -> Vec<VSet> {
     let dim = map_dim(map);
     let l = lcm(dim.0, dim.1);
     let mut current_map = map.clone();
-    let mut map_vec = Vec::<VMap>::new();
+    let mut maps = Vec::<VSet>::new();
     for _ in 0..l {
-        map_vec.push(current_map.clone());
+        let mut map = vec![false; (dim.0 + 2) as usize * (dim.1 + 2) as usize];
+        for &((l, c), _) in current_map.iter() {
+            map[l as usize * (dim.1 + 2) as usize + c as usize] = true;
+        }
+        maps.push(map.to_vec());
         current_map = update_map(&current_map);
     }
-    assert!(map_str(map) == map_str(&current_map));
-    assert!(map_vec.len() == l as usize);
-    map_vec
+    maps
 }
 
-fn walk(map: &VMap) -> usize {
-    let max_l = map.iter().map(|(pos, _)| pos.0).max().unwrap() - 1;
-    let max_c = map.iter().map(|(pos, _)| pos.1).max().unwrap() - 1;
-    let map_vec = get_maps(map);
-    let (start, end) = ((0, 1), (max_l + 1, max_c));
-    walk_step(&map_vec, start, end, 0)
+fn walk(maps: &[VSet], dim: Coord, start: Coord, end: Coord, step: usize) -> usize {
+    let mut visited = HashSet::<(Coord, usize)>::new();
+    let mut todo = VecDeque::<(Coord, usize)>::new();
+    let mut moves = 0;
+    let mut skip_map = 0;
+
+    todo.push_front((start, step));
+    while !todo.is_empty() {
+        let (pos, step) = todo.pop_back().unwrap();
+        if pos == end {
+            if DEBUG {
+                println!("moves: {moves}, skip_map {skip_map}");
+            }
+            return step;
+        }
+        moves += 1;
+        if DEBUG && moves % 50000 == 0 {
+            println!(
+                "step: {step}: moves: {moves}, stack: {}, skip_map {skip_map}",
+                todo.len()
+            );
+        }
+        let map_id = (step + 1) % maps.len();
+        let map = &maps[map_id];
+        for next in [
+            (pos.0 - 1, pos.1),
+            (pos.0, pos.1 - 1),
+            pos,
+            (pos.0 + 1, pos.1),
+            (pos.0, pos.1 + 1),
+        ] {
+            if !(next.0 >= 1
+                && next.0 <= dim.0
+                && next.1 >= 1
+                && next.1 <= dim.1
+                && !map[next.0 as usize * (dim.1 + 2) as usize + next.1 as usize]
+                || next == end
+                || next == start)
+            {
+                continue;
+            }
+            if visited.contains(&(next, map_id)) {
+                skip_map += 1;
+                continue;
+            }
+            visited.insert((next, map_id));
+            todo.push_front((next, step + 1))
+        }
+    }
+    unreachable!()
 }
 
-fn step1() {
-    let map = read_input();
-    let res = walk(&map);
+fn step1(maps: &[VSet], dim: Coord) {
+    let (start, end) = ((0, 1), (dim.0 + 1, dim.1));
+    let res = walk(maps, dim, start, end, 0);
     println!("step1: {res}");
 }
 
-fn walk3(map: &VMap) -> usize {
-    let max_l = map.iter().map(|(pos, _)| pos.0).max().unwrap() - 1;
-    let max_c = map.iter().map(|(pos, _)| pos.1).max().unwrap() - 1;
-    let map_vec = get_maps(map);
-    let (start, end) = ((0, 1), (max_l + 1, max_c));
-    let step1 = walk_step(&map_vec, start, end, 0);
-    let step2 = walk_step(&map_vec, end, start, step1);
-    walk_step(&map_vec, start, end, step2)
-}
-
-fn step2() {
-    let map = read_input();
-    let res = walk3(&map);
+fn step2(maps: &[VSet], dim: Coord) {
+    let (start, end) = ((0, 1), (dim.0 + 1, dim.1));
+    let step1 = walk(maps, dim, start, end, 0);
+    let step2 = walk(maps, dim, end, start, step1);
+    let res = walk(maps, dim, start, end, step2);
     println!("step2: {res}");
 }
 
 fn main() {
-    step1();
-    step2();
+    let map = read_input();
+    let maps = get_maps(&map);
+    let dim = map_dim(&map);
+    step1(&maps, dim);
+    step2(&maps, dim);
 }
 
 #[allow(dead_code)]
