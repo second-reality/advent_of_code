@@ -1,11 +1,13 @@
 use itertools::Itertools;
 use std::collections::HashMap;
+use std::collections::HashSet;
 
 //const INPUT: &str = include_str!("../test.txt");
 const INPUT: &str = include_str!("../input.txt");
 
 type Coord = (i32, i32);
 type Map = HashMap<Coord, char>;
+type Set = HashSet<Coord>;
 type MapCount = HashMap<Coord, i32>;
 
 const DIRS: [Coord; 4] = [(-1, 0), (0, 1), (1, 0), (0, -1)]; // N, E, S, W
@@ -46,9 +48,9 @@ fn get_all_dirs() -> Vec<Coord> {
     .collect()
 }
 
-fn map_count_empty(map: &Map) -> i32 {
-    let cols = || map.keys().map(|(_, c)| *c);
-    let lines = || map.keys().map(|(l, _)| *l);
+fn set_count_empty(map: &Set) -> i32 {
+    let cols = || map.iter().map(|(_, c)| *c);
+    let lines = || map.iter().map(|(l, _)| *l);
     let min_c = cols().min().unwrap();
     let max_c = cols().max().unwrap();
     let min_l = lines().min().unwrap();
@@ -57,81 +59,66 @@ fn map_count_empty(map: &Map) -> i32 {
     size - map.len() as i32
 }
 
-fn rounds(map: &Map, max: i32) -> (Map, i32) {
+fn rounds(map: &Map, max: i32) -> (Set, i32) {
     let all_dirs = get_all_dirs();
     let dirs = [0, 1, 7, 4, 3, 5, 6, 7, 5, 2, 1, 3];
     let mut dir = 0;
-    let mut map = map.clone();
+    let mut set = map.keys().copied().collect::<Set>();
     let mut rounds = 0;
 
-    //println!("Initial");
-    //print_map(&map);
-
     loop {
-        let elves = map
-            .iter()
-            .filter_map(|(&(l, c), &ch)| if ch == '#' { Some((l, c)) } else { None })
-            .collect_vec();
-        let mut new_pos = Vec::<Coord>::new();
-        'a: for pos in elves.iter() {
+        let mut elts = Vec::<(Coord, Coord)>::new();
+        let mut count = MapCount::new();
+        'a: for &pos in set.iter() {
             let around = all_dirs
                 .iter()
-                .filter_map(|&d| map.get(&vec_add(*pos, d)))
+                .filter_map(|&d| set.get(&vec_add(pos, d)))
                 .count();
             if around == 0 {
-                new_pos.push(*pos);
+                *count.entry(pos).or_default() += 1;
                 continue;
             }
             for step in 0..4 {
                 let d = (dir + step * 3) % dirs.len();
                 let around = dirs[d..d + 3]
                     .iter()
-                    .filter_map(|&d| map.get(&vec_add(*pos, all_dirs[d])))
+                    .filter_map(|&d| set.get(&vec_add(pos, all_dirs[d])))
                     .count();
                 if around == 0 {
-                    new_pos.push(vec_add(*pos, all_dirs[dirs[d]]));
+                    let new = vec_add(pos, all_dirs[dirs[d]]);
+                    *count.entry(new).or_default() += 1;
+                    elts.push((pos, new));
                     continue 'a;
                 }
             }
-            new_pos.push(*pos);
+            *count.entry(pos).or_default() += 1;
         }
-        let mut count = MapCount::new();
-        for pos in new_pos.iter() {
-            if let Some(x) = count.get(pos) {
-                count.insert(*pos, x + 1);
-            } else {
-                count.insert(*pos, 1);
-            }
-        }
-        let mut new_map = Map::new();
         let mut moved = 0;
-        for (pos, new) in elves.iter().zip(new_pos) {
+        for &(pos, new) in elts.iter() {
             let c = *count.get(&new).unwrap();
-            let new_pos = if c > 1 { *pos } else { new };
-            new_map.insert(new_pos, '#');
-            if new_pos != *pos {
+            let new_pos = if c > 1 { pos } else { new };
+            if pos != new_pos {
                 moved += 1;
+                set.remove(&pos);
+                set.insert(new);
             }
         }
         rounds += 1;
-        //println!("Round {rounds}");
-        //print_map(&new_map);
         if moved == 0 {
             break;
         }
-        map = new_map;
         if rounds == max {
             break;
         }
         dir = (dir + 3) % dirs.len()
     }
-    (map, rounds)
+    (set, rounds)
 }
 
 fn step1() {
     let input = read_input();
-    let (map, _) = rounds(&input, 10);
-    let res = map_count_empty(&map);
+    let (set, _) = rounds(&input, 10);
+    let res = set_count_empty(&set);
     println!("step1: {res}");
 }
 
