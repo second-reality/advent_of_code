@@ -16,25 +16,23 @@ fn read_input() -> Vec<i64> {
 }
 
 fn mix_vec(input: &[i64], rounds: i32) -> Vec<i64> {
-    let index_positions =
+    let positions_index =
         |positions: &[usize], idx: usize| positions.iter().position(|&x| x == idx).unwrap();
-    let positions_val =
-        |positions: &[usize], vec: &[i64]| positions.iter().map(|&x| vec[x]).collect::<Vec<i64>>();
     let mut positions = (0..input.len()).collect_vec();
     let len = input.len() as i64;
     for _r in 0..rounds {
         for (idx, val) in input.iter().enumerate() {
-            let pos = index_positions(&positions, idx);
+            let pos = positions_index(&positions, idx);
             let target_pos = (pos as i64 + val).rem_euclid(len - 1) as usize;
             positions.remove(pos);
             positions.insert(target_pos, idx);
         }
     }
-    positions_val(&positions, input)
+    positions.iter().map(|&x| input[x]).collect()
 }
 
 fn mix_tree(input: &[i64], rounds: i32) -> Vec<i64> {
-    let mut tree = input.iter().copied().collect::<OrdTree<i64>>();
+    let mut tree = input.iter().copied().collect::<OrdTree<_>>();
     let len = input.len() as i64;
     for _ in 0..rounds {
         for (idx, val) in input.iter().enumerate() {
