@@ -75,7 +75,6 @@ fn rounds(map: &Map, max: i32) -> (Set, i32) {
                 .filter_map(|&d| set.get(&vec_add(pos, d)))
                 .count();
             if around == 0 {
-                *count.entry(pos).or_default() += 1;
                 continue;
             }
             for step in 0..4 {
@@ -91,7 +90,6 @@ fn rounds(map: &Map, max: i32) -> (Set, i32) {
                     continue 'a;
                 }
             }
-            *count.entry(pos).or_default() += 1;
         }
         let mut moved = 0;
         for &(pos, new) in elts.iter() {
