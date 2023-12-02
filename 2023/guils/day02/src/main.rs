@@ -1,4 +1,5 @@
 use itertools::Itertools;
+use lazy_static::lazy_static;
 use regex::Regex;
 
 //const INPUT: &str = include_str!("../test.txt");
@@ -6,52 +7,51 @@ const INPUT: &str = include_str!("../input.txt");
 const STEP1: u32 = 2720;
 const STEP2: u32 = 71535;
 
+lazy_static! {
+    static ref RE_GAME: Regex = Regex::new(r"Game (\d+)").unwrap();
+    static ref RE_RED: Regex = Regex::new(r"(\d+) red").unwrap();
+    static ref RE_GREEN: Regex = Regex::new(r"(\d+) green").unwrap();
+    static ref RE_BLUE: Regex = Regex::new(r"(\d+) blue").unwrap();
+}
+
 type Rgb = (u32, u32, u32);
+type Game = (u32, Vec<Rgb>);
 
 fn read_input() -> Vec<String> {
     INPUT.trim().split('\n').map(str::to_string).collect()
 }
 
-fn parse_games(lines: &[String]) -> Vec<(u32, Vec<Rgb>)> {
-    let re_game = Regex::new(r"Game (\d+)").unwrap();
-    let re_red = Regex::new(r"(\d+) red").unwrap();
-    let re_green = Regex::new(r"(\d+) green").unwrap();
-    let re_blue = Regex::new(r"(\d+) blue").unwrap();
-    lines
+fn parse_game(line: &str) -> Game {
+    let game_trials = line.split(':').collect::<Vec<_>>();
+    let game_id = RE_GAME.captures(game_trials[0]).unwrap()[1]
+        .parse::<u32>()
+        .unwrap();
+    let trials = game_trials[1].split(';').collect::<Vec<_>>();
+    let res : Vec<&Regex> = vec![&RE_RED, &RE_GREEN, &RE_BLUE];
+    let cubes = trials
         .iter()
-        .map(|line| {
-            let game_trials = line.split(':').collect::<Vec<_>>();
-            let game_id = re_game.captures(game_trials[0]).unwrap()[1]
-                .parse::<u32>()
-                .unwrap();
-            let trials = game_trials[1].split(';').collect::<Vec<_>>();
-            let res = vec![&re_red, &re_green, &re_blue];
-            let cubes = trials
-                .iter()
-                .map(|t| {
-                    res.iter()
-                        .map(|re| match re.captures(t) {
-                            Some(x) => x[1].parse::<u32>().unwrap(),
-                            _ => 0,
-                        })
-                        .collect_tuple()
-                        .unwrap()
+        .map(|t| {
+            res.iter()
+                .map(|re| match re.captures(t) {
+                    Some(x) => x[1].parse::<u32>().unwrap(),
+                    _ => 0,
                 })
-                .collect::<Vec<_>>();
-            (game_id, cubes)
+                .collect_tuple()
+                .unwrap()
         })
-        .collect()
+        .collect::<Vec<_>>();
+    (game_id, cubes)
 }
 
-fn valid_games(games: &[(u32, Vec<Rgb>)], rm: u32, gm: u32, bm: u32) -> Vec<u32> {
+fn parse_games(lines: &[String]) -> Vec<Game> {
+    lines.iter().map(|l| parse_game(l)).collect()
+}
+
+fn valid_games(games: &[Game], rm: u32, gm: u32, bm: u32) -> Vec<u32> {
     games
         .iter()
         .filter_map(|(id, trials)| {
-            if !trials.iter().any(|(r, g, b)| *r > rm || *g > gm || *b > bm) {
-                Some(*id)
-            } else {
-                None
-            }
+            (!trials.iter().any(|(r, g, b)| *r > rm || *g > gm || *b > bm)).then_some(*id)
         })
         .collect()
 }
@@ -65,24 +65,13 @@ fn step1() {
     assert!(res == STEP1);
 }
 
-fn minimums(games: &[(u32, Vec<Rgb>)]) -> Vec<Rgb> {
+fn minimums(games: &[Game]) -> Vec<Rgb> {
     games
         .iter()
-        .map(|g| {
-            let (_, trials) = g;
-            let (mut rm, mut gm, mut bm) = (0, 0, 0);
-            for &(r, g, b) in trials.iter() {
-                if r > rm {
-                    rm = r
-                }
-                if g > gm {
-                    gm = g
-                }
-                if b > bm {
-                    bm = b
-                }
-            }
-            (rm, gm, bm)
+        .map(|(_, trials)| {
+            trials.iter().fold((0, 0, 0), |(r, g, b), &(x, y, z)| {
+                (r.max(x), g.max(y), b.max(z))
+            })
         })
         .collect()
 }
