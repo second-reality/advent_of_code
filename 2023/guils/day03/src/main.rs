@@ -1,5 +1,5 @@
-use std::collections::{HashMap,HashSet};
 use lazy_static::lazy_static;
+use std::collections::{HashMap, HashSet};
 
 // const INPUT: &str = include_str!("../test.txt");
 // const STEP1: u32 = 4361;
@@ -7,7 +7,7 @@ use lazy_static::lazy_static;
 const INPUT: &str = include_str!("../input.txt");
 const STEP1: u32 = 553825;
 const STEP2: u32 = 93994191;
-    
+
 type Coord = (i32, i32);
 type PartId = (char, usize);
 type Plane = HashMap<Coord, PartId>;
@@ -16,9 +16,15 @@ type Graph = HashMap<PartId, HashSet<PartId>>;
 
 lazy_static! {
     static ref BALL: Vec<Coord> = vec![
-        (-1, -1), (-1, 0), (-1, 1),
-        (0, -1), (0, 1),
-        (1, -1), (1, 0), (1, 1)];
+        (-1, -1),
+        (-1, 0),
+        (-1, 1),
+        (0, -1),
+        (0, 1),
+        (1, -1),
+        (1, 0),
+        (1, 1)
+    ];
 }
 
 fn read_input() -> Vec<String> {
@@ -39,7 +45,7 @@ fn get_plane(lines: &[String]) -> (Plane, Parts) {
                     part_num += 1;
                     parts.push(c.to_string());
                 } else {
-                    map.insert(coord, ('P', part_num-1));
+                    map.insert(coord, ('P', part_num - 1));
                     let last = parts.pop().unwrap();
                     parts.push(last + &c.to_string());
                 }
@@ -61,11 +67,11 @@ fn get_parts_graph(plane: &Plane) -> Graph {
     let mut graph = Graph::new();
     for ((i, j), part) in plane.iter() {
         if let ('P', _) = part {
-            for (x, y) in BALL.iter().map(|(x, y)| (i+x, j+y)) {
-                if let Some(('C', cid)) = plane.get(&(x,y)) {
+            for (x, y) in BALL.iter().map(|(x, y)| (i + x, j + y)) {
+                if let Some(('C', cid)) = plane.get(&(x, y)) {
                     let mut set = HashSet::<PartId>::new();
                     set.insert(('C', *cid));
-                    if let Some(prev) = graph.get(&part) {
+                    if let Some(prev) = graph.get(part) {
                         set.extend(prev);
                     }
                     graph.insert(*part, set);
@@ -77,9 +83,9 @@ fn get_parts_graph(plane: &Plane) -> Graph {
 }
 
 fn parts_sum(graph: &Graph, parts: &Parts) -> u32 {
-    graph.keys().fold(0, |a, part| {
-        a + parts[part.1].parse::<u32>().unwrap()
-    })
+    graph
+        .keys()
+        .fold(0, |a, part| a + parts[part.1].parse::<u32>().unwrap())
 }
 
 fn step1() {
@@ -95,11 +101,11 @@ fn get_ctrls_graph(plane: &Plane) -> Graph {
     let mut graph = Graph::new();
     for ((i, j), part) in plane.iter() {
         if let ('C', _) = part {
-            for (x, y) in BALL.iter().map(|(x, y)| (i+x, j+y)) {
-                if let Some(('P', pid)) = plane.get(&(x,y)) {
+            for (x, y) in BALL.iter().map(|(x, y)| (i + x, j + y)) {
+                if let Some(('P', pid)) = plane.get(&(x, y)) {
                     let mut set = HashSet::<PartId>::new();
                     set.insert(('P', *pid));
-                    if let Some(prev) = graph.get(&part) {
+                    if let Some(prev) = graph.get(part) {
                         set.extend(prev);
                     }
                     graph.insert(*part, set);
@@ -113,7 +119,9 @@ fn get_ctrls_graph(plane: &Plane) -> Graph {
 fn gears_power(graph: &Graph, parts: &Parts) -> u32 {
     graph.iter().fold(0, |a, ((_, id), set)| {
         if parts[*id] == "*" && set.len() == 2 {
-            let power = set.iter().fold(1, |a, (_, pid)| a * parts[*pid].parse::<u32>().unwrap());
+            let power = set
+                .iter()
+                .fold(1, |a, (_, pid)| a * parts[*pid].parse::<u32>().unwrap());
             a + power
         } else {
             a
