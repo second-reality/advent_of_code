@@ -63,20 +63,22 @@ fn get_plane(lines: &[String]) -> (Plane, Parts) {
     (map, parts)
 }
 
-fn get_parts_graph(plane: &Plane) -> Graph {
+fn get_graph(plane: &Plane) -> Graph {
     let mut graph = Graph::new();
     for ((i, j), part) in plane.iter() {
-        if let ('P', _) = part {
-            for (x, y) in BALL.iter().map(|(x, y)| (i + x, j + y)) {
-                if let Some(('C', cid)) = plane.get(&(x, y)) {
-                    let mut set = HashSet::<PartId>::new();
-                    set.insert(('C', *cid));
-                    if let Some(prev) = graph.get(part) {
-                        set.extend(prev);
-                    }
-                    graph.insert(*part, set);
+        let mut set = HashSet::<PartId>::new();
+        for (x, y) in BALL.iter().map(|(x, y)| (i + x, j + y)) {
+            if let Some(part2) = plane.get(&(x, y)) {
+                if part.0 != part2.0 {
+                    set.insert(*part2);
                 }
             }
+        }
+        if let Some(oldset) = graph.get(part) {
+            set.extend(oldset);
+        }
+        if !set.is_empty() {
+            graph.insert(*part, set);
         }
     }
     graph
@@ -85,35 +87,17 @@ fn get_parts_graph(plane: &Plane) -> Graph {
 fn parts_sum(graph: &Graph, parts: &Parts) -> u32 {
     graph
         .keys()
-        .fold(0, |a, part| a + parts[part.1].parse::<u32>().unwrap())
+        .filter(|(k, _)| *k == 'P')
+        .fold(0, |a, (_, id)| a + parts[*id].parse::<u32>().unwrap())
 }
 
 fn step1() {
     let input = read_input();
     let (plane, parts) = get_plane(&input);
-    let graph = get_parts_graph(&plane);
+    let graph = get_graph(&plane);
     let res = parts_sum(&graph, &parts);
     println!("step1: {res}");
     assert!(res == STEP1);
-}
-
-fn get_ctrls_graph(plane: &Plane) -> Graph {
-    let mut graph = Graph::new();
-    for ((i, j), part) in plane.iter() {
-        if let ('C', _) = part {
-            for (x, y) in BALL.iter().map(|(x, y)| (i + x, j + y)) {
-                if let Some(('P', pid)) = plane.get(&(x, y)) {
-                    let mut set = HashSet::<PartId>::new();
-                    set.insert(('P', *pid));
-                    if let Some(prev) = graph.get(part) {
-                        set.extend(prev);
-                    }
-                    graph.insert(*part, set);
-                }
-            }
-        }
-    }
-    graph
 }
 
 fn gears_power(graph: &Graph, parts: &Parts) -> u32 {
@@ -132,7 +116,7 @@ fn gears_power(graph: &Graph, parts: &Parts) -> u32 {
 fn step2() {
     let input = read_input();
     let (plane, parts) = get_plane(&input);
-    let graph = get_ctrls_graph(&plane);
+    let graph = get_graph(&plane);
     let res = gears_power(&graph, &parts);
     println!("step2: {res}");
     assert!(res == STEP2);
