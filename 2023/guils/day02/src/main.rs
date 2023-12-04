@@ -27,7 +27,7 @@ fn parse_game(line: &str) -> Game {
         .parse::<u32>()
         .unwrap();
     let trials = game_trials[1].split(';').collect::<Vec<_>>();
-    let res : Vec<&Regex> = vec![&RE_RED, &RE_GREEN, &RE_BLUE];
+    let res: Vec<&Regex> = vec![&RE_RED, &RE_GREEN, &RE_BLUE];
     let cubes = trials
         .iter()
         .map(|t| {
