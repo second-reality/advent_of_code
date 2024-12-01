@@ -22,7 +22,7 @@ build_and_run()
     pushd $day > /dev/null
     tmp_bin=$(mktemp)
     g++ -pedantic -Wall -Wextra -std=c++23 -o $tmp_bin main.cpp 
-    time $tmp_bin
+    time $tmp_bin data
     rm $tmp_bin
     popd > /dev/null
   done
